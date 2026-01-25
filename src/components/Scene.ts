@@ -281,12 +281,13 @@ export class Scene {
         })
 
         const cardPositions = isMobile ? [
-            { x: -2.5, y: 1.5, z: -3, rot: 0.2, scale: 1.2 },
-            { x: 2.5, y: -0.8, z: -4, rot: -0.18, scale: 1.0 }
+            { x: -3.5, y: 1.2, z: -3.5, rot: 0.25, scale: 1.1 },
+            { x: 3.5, y: -1.0, z: -4.5, rot: -0.22, scale: 1.0 }
         ] : [
             { x: -4.5, y: 1.2, z: -4, rot: 0.15, scale: 1.6 },
             { x: 4.5, y: -0.8, z: -5, rot: -0.12, scale: 1.5 }
         ]
+
 
 
         cardPositions.forEach((pos, i) => {
