@@ -281,14 +281,12 @@ export class Scene {
         })
 
         const cardPositions = isMobile ? [
-            { x: -3.5, y: 1.2, z: -3.5, rot: 0.25, scale: 1.1 },
-            { x: 3.5, y: -1.0, z: -4.5, rot: -0.22, scale: 1.0 }
+            { x: -1.8, y: 1.0, z: -3.5, rot: 0.1, scale: 1.2 }, // More centered
+            { x: 1.8, y: -0.8, z: -4.5, rot: -0.1, scale: 1.1 }  // More centered
         ] : [
             { x: -4.5, y: 1.2, z: -4, rot: 0.15, scale: 1.6 },
-            { x: 4.5, y: -0.8, z: -5, rot: -0.12, scale: 1.5 }
+            { x: 5.0, y: -0.8, z: -5, rot: -0.12, scale: 1.5 }
         ]
-
-
 
         cardPositions.forEach((pos, i) => {
             const group = new THREE.Group()
@@ -301,12 +299,25 @@ export class Scene {
                 transparent: true,
                 opacity: 0.9,
                 emissive: 0xffffff,
-                emissiveIntensity: 0.05
+                emissiveIntensity: 0.15 // Increased base brightness
             })
 
             const plane = new THREE.Mesh(planeGeo, planeMat)
             plane.userData.isProductCard = true
             plane.userData.cardIndex = i
+
+            // Add a glowing indicator line at the bottom
+            const lineGeo = new THREE.PlaneGeometry(2 * pos.scale, 0.05 * pos.scale)
+            const lineMat = new THREE.MeshStandardMaterial({
+                color: 0xffffff,
+                emissive: 0xffffff,
+                emissiveIntensity: 1.0,
+                transparent: true,
+                opacity: 0.8
+            })
+            const line = new THREE.Mesh(lineGeo, lineMat)
+            line.position.y = -1.5 * pos.scale
+            group.add(line)
 
             group.add(plane)
             group.position.set(pos.x, pos.y, pos.z)
@@ -411,8 +422,23 @@ export class Scene {
         }
 
         this.productCards.forEach((card, i) => {
-            card.position.y += Math.sin(Date.now() * 0.001 + i) * 0.002
-            card.rotation.z = Math.sin(Date.now() * 0.0005 + i) * 0.05
+            const time = Date.now() * 0.001
+            card.position.y += Math.sin(time + i) * 0.002
+            card.rotation.z = Math.sin(time * 0.5 + i) * 0.05
+
+            // Pulsing emissive intensity for interactive feel
+            const plane = card.children.find(child => (child as any).userData.isProductCard) as THREE.Mesh
+            if (plane) {
+                const mat = plane.material as THREE.MeshStandardMaterial
+                mat.emissiveIntensity = 0.15 + Math.sin(time * 2) * 0.05
+            }
+
+            // Pulsing indicator line
+            const line = card.children.find(child => !(child as any).userData.isProductCard && child instanceof THREE.Mesh) as THREE.Mesh
+            if (line) {
+                const mat = line.material as THREE.MeshStandardMaterial
+                mat.emissiveIntensity = 0.5 + Math.sin(time * 4) * 0.5
+            }
         })
 
         if (this.logoGroup) {
