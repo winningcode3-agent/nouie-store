@@ -18,47 +18,98 @@ export class UI {
 
   private init(): void {
     // Clean up previous UI
-    document.querySelectorAll('.overlay, .header, .cart-drawer, .menu-drawer').forEach(e => e.remove())
+    document.querySelectorAll('.overlay, .header, .cart-drawer, .menu-drawer, .footer').forEach(e => e.remove())
 
-    // Home overlay
-    const overlay = document.createElement('div')
-    overlay.className = 'overlay'
-    overlay.innerHTML = `
-      <div class="tagline">WE MOVE FORWARD.</div>
-      <div class="footer-actions">
-        <a href="#collection" class="footer-btn">ENTER EXPERIENCE</a>
-        <a href="#lookbook" class="footer-btn">LOOKBOOK</a>
-      </div>
-      <div class="bottom-metadata">
-        <div class="tech-info">
-          ENVIRONMENT: INDUSTRIAL_ZONE_04_HIGH_VIS<br>
-          LIGHTING: ATMOSPHERIC_CHARCOAL_WASH
-        </div>
-        <div class="agency-credit">
-          CREATED BY <a href="https://winningcode.agency" target="_blank">WINNING CODE AGENCY</a>
-        </div>
-      </div>
-    `
-    document.body.appendChild(overlay)
 
-    // Header
+    // Header (Centered Logo Layout)
     const header = document.createElement('div')
     header.className = 'header'
     header.innerHTML = `
-      <div class="brand-small">
-        NOUIE
-        <span class="brand-sub">INDUSTRIAL DESIGN UNIT</span>
-      </div>
-      <div class="header-actions">
-        <button class="cart-btn" id="cartBtn">
-          <span class="bag-icon">🛒</span> CART (<span id="cartCount">${cartStore.getTotalQuantity()}</span>)
-        </button>
+      <div class="header-left">
         <button class="menu-toggle" id="menuToggle">
-          <div class="menu-icon"></div>
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>
+        </button>
+      </div>
+      
+      <a href="#home" class="brand">
+        <div class="brand-no">NO</div>
+        <div class="brand-uie">UIE</div>
+      </a>
+      
+      <div class="header-right">
+        <button class="search-btn">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+        </button>
+        <button class="cart-btn" id="cartBtn">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z"></path><line x1="3" y1="6" x2="21" y2="6"></line><path d="M16 10a4 4 0 0 1-8 0"></path></svg>
+          <span id="cartCount" class="cart-count">${cartStore.getTotalQuantity()}</span>
         </button>
       </div>
     `
     document.body.appendChild(header)
+
+    // Ensure page-content exists and is in the correct order
+    let contentDiv = document.getElementById('page-content')
+    if (!contentDiv) {
+      contentDiv = document.createElement('div')
+      contentDiv.id = 'page-content'
+      document.body.appendChild(contentDiv)
+    } else {
+      // Move it after the header if it already exists
+      document.body.appendChild(contentDiv)
+    }
+
+    // Footer
+    const footer = document.createElement('footer')
+    footer.className = 'footer'
+    footer.innerHTML = `
+      <div class="footer-content">
+        <div class="footer-column footer-brand">
+          <a href="#home" class="brand">
+            <div class="brand-no">NO</div>
+            <div class="brand-uie">UIE</div>
+          </a>
+        </div>
+        
+        <div class="footer-column">
+          <h4>EXPLORE</h4>
+          <div class="footer-nav">
+            <a href="#home" class="footer-link">Home</a>
+            <a href="#collection" class="footer-link">Collection</a>
+            <a href="#archive" class="footer-link">Archive</a>
+            <a href="#studio" class="footer-link">Studio</a>
+          </div>
+        </div>
+        
+        <div class="footer-column">
+          <h4>SUPPORT</h4>
+          <div class="footer-nav">
+            <a href="#shipping" class="footer-link">Shipping</a>
+            <a href="#returns" class="footer-link">Returns</a>
+            <a href="#privacy" class="footer-link">Privacy Policy</a>
+            <a href="#contact" class="footer-link">Contact</a>
+          </div>
+        </div>
+        
+        <div class="footer-column footer-newsletter">
+          <h4>UPDATE</h4>
+          <p>Sign up to receive updates on new drops and archive releases.</p>
+          <form class="newsletter-form">
+            <input type="email" placeholder="EMAIL ADDRESS" class="newsletter-input">
+            <button type="submit" class="btn-newsletter-submit">JOIN</button>
+          </form>
+        </div>
+      </div>
+      
+      <div class="footer-bottom">
+        <div class="copyright">© ${new Date().getFullYear()} NOUIE. ALL RIGHTS RESERVED.</div>
+        <div class="footer-social">
+          <a href="#" class="footer-link">INSTAGRAM</a>
+          <a href="#" class="footer-link">TIKTOK</a>
+        </div>
+      </div>
+    `
+    document.body.appendChild(footer)
 
     // Cart Drawer
     const cartDrawer = document.createElement('div')
@@ -66,7 +117,7 @@ export class UI {
     cartDrawer.id = 'cartDrawer'
     cartDrawer.innerHTML = `
       <div class="cart-drawer-header">
-        <h2>YOUR CART</h2>
+        <h2>CART</h2>
         <button class="cart-close" id="cartClose">&times;</button>
       </div>
       <div class="cart-items" id="cartItems">
@@ -74,9 +125,10 @@ export class UI {
       </div>
       <div class="cart-footer">
         <div class="cart-total">
-          <span>TOTAL</span>
+          <span>SUBTOTAL</span>
           <span id="cartTotal">$0.00 USD</span>
         </div>
+        <p class="cart-shipping-notice">Shipping & taxes calculated at checkout</p>
         <button class="btn-checkout" id="checkoutBtn">CHECKOUT</button>
       </div>
     `
@@ -87,12 +139,19 @@ export class UI {
     menuDrawer.className = 'menu-drawer'
     menuDrawer.id = 'menuDrawer'
     menuDrawer.innerHTML = `
+      <div class="menu-drawer-header">
+        <button class="menu-close" id="menuClose">&times;</button>
+      </div>
       <nav class="drawer-nav">
         <a href="#home" class="drawer-link">HOME</a>
         <a href="#collection" class="drawer-link">COLLECTION</a>
         <a href="#archive" class="drawer-link">ARCHIVE</a>
         <a href="#studio" class="drawer-link">STUDIO</a>
+        <a href="#lookbook" class="drawer-link">LOOKBOOK</a>
       </nav>
+      <div class="menu-drawer-footer">
+        <a href="https://www.instagram.com/_nouie/" target="_blank">INSTAGRAM</a>
+      </div>
     `
     document.body.appendChild(menuDrawer)
 
@@ -112,6 +171,11 @@ export class UI {
       this.toggleCart(false)
     })
 
+    // Menu close
+    document.getElementById('menuClose')?.addEventListener('click', () => {
+      this.toggleMenu(false)
+    })
+
     // Checkout button
     document.getElementById('checkoutBtn')?.addEventListener('click', () => {
       if (cartStore.getItems().length === 0) return
@@ -125,9 +189,10 @@ export class UI {
       this.toggleMenu()
     })
 
-    // Drawer links
-    menuDrawer.querySelectorAll('.drawer-link').forEach(link => {
+    // Drawer and Nav links
+    document.querySelectorAll('.drawer-link, .nav-link, .brand, .footer-link').forEach(link => {
       link.addEventListener('click', (e) => {
+        e.preventDefault()
         const hash = (e.currentTarget as HTMLAnchorElement).getAttribute('href')?.replace('#', '') || 'home'
         this.toggleMenu(false)
         this.onNavigate(hash)
@@ -216,10 +281,7 @@ export class UI {
     })
   }
 
-  setOverlayVisible(visible: boolean): void {
-    const overlay = document.querySelector('.overlay') as HTMLElement
-    if (overlay) {
-      overlay.style.display = visible ? 'flex' : 'none'
-    }
+  setOverlayVisible(_visible: boolean): void {
+    // Legacy overlay no longer used; homepage now part of scrollable content
   }
 }

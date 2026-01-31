@@ -8,6 +8,8 @@ export interface Product {
     description: string
     sizes: string[]
     images: string[]
+    stock_qty?: number
+    is_active?: boolean
 }
 
 export interface CartItem {
@@ -27,6 +29,8 @@ export interface Order {
     items: CartItem[]
     total: number
     status: string
+    id?: string | number
+    created_at?: string
 }
 
 export interface TechnicalMetadata {
