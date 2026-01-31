@@ -2107,6 +2107,132 @@ body {
   font-weight: 700;
 }
 
+.admin-logout-btn {
+  background: transparent;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: var(--accent-red);
+  font-size: 10px;
+  font-weight: 800;
+  padding: 4px 12px;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  margin-left: auto;
+}
+
+.admin-logout-btn:hover {
+  background: var(--accent-red);
+  color: #fff;
+  border-color: var(--accent-red);
+}
+
+/* Admin Login UI */
+.admin-login-page {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #f8f8f8;
+  z-index: 10002;
+  padding: 20px;
+}
+
+.admin-login-container {
+  width: 100%;
+  max-width: 400px;
+  background: #fff;
+  padding: 60px 40px;
+  border: 1px solid var(--border-light);
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.05);
+  text-align: center;
+}
+
+.admin-login-header {
+  margin-bottom: 40px;
+}
+
+.admin-login-header h1 {
+  font-size: 24px;
+  font-weight: 900;
+  letter-spacing: -0.02em;
+  margin: 10px 0;
+  text-transform: uppercase;
+}
+
+.admin-login-header p {
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+
+.admin-login-form {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  text-align: left;
+}
+
+.btn-admin-login {
+  width: 100%;
+  padding: 16px;
+  background: var(--text-primary);
+  color: #fff;
+  border: none;
+  font-weight: 800;
+  font-size: 13px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  margin-top: 10px;
+}
+
+.btn-admin-login:hover {
+  background: var(--accent-red);
+}
+
+.auth-feedback {
+  height: 20px;
+  margin-top: 15px;
+  font-size: 11px;
+  font-weight: 700;
+  text-align: center;
+}
+
+.auth-feedback .error {
+  color: var(--accent-red);
+}
+
+.auth-feedback .success {
+  color: #2ecc71;
+}
+
+.auth-feedback .loading {
+  color: var(--text-secondary);
+}
+
+.admin-login-footer {
+  margin-top: 40px;
+  padding-top: 20px;
+  border-top: 1px solid var(--border-light);
+}
+
+.btn-back-home {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--text-secondary);
+  text-decoration: none;
+  text-transform: uppercase;
+  transition: color 0.2s ease;
+}
+
+.btn-back-home:hover {
+  color: var(--text-primary);
+}
+
 .admin-nav {
   display: flex;
   flex-direction: column;

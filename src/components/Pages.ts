@@ -5,6 +5,7 @@ import { cartStore } from '../lib/store'
 import { catalogs, archiveSeasons } from '../lib/data'
 import type { Product } from '../lib/types'
 import { SEO } from '../lib/seo'
+import { Auth } from '../lib/auth'
 
 export class Pages {
   private contentDiv: HTMLElement | null = null
@@ -784,36 +785,48 @@ export class Pages {
   }
 
   private async renderAdmin(contentDiv: HTMLElement): Promise<void> {
+    const isAdmin = await Auth.isAdmin()
+    if (!isAdmin) {
+      this.renderAdminLogin(contentDiv)
+      return
+    }
+
     const hash = window.location.hash
     const subRoute = hash.includes('/') ? hash.split('/')[1] : 'orders'
 
     contentDiv.innerHTML = `
-                                   <div class="admin-page">
-                                    <aside class="admin-sidebar">
-                                      <div class="admin-sidebar-header">
-                                        <span class="admin-label"> ADMIN_SYSTEM v1.0</span>
- </div>
-                                          < nav class="admin-nav">
-                                            <a href="#admin/orders" class="admin-nav-link ${subRoute === 'orders' ? 'active' : ''}">
-                                              <span class="nav-icon">📊</span> ORDERS
-                                                </a>
-                                                < a href="#admin/products" class="admin-nav-link ${subRoute === 'products' ? 'active' : ''}">
-                                                  <span class="nav-icon">📦</span> PRODUCTS
-                                                    </a>
-                                                    < a href="#collection" class="admin-nav-link exit">
-                                                      <span class="nav-icon">←</span> EXIT_ADMIN
-                                                        </a>
-                                                        </nav>
-                                                        </aside>
-
-                                                        < main class="admin-main" id="adminMain">
-                                                          <div class="loading-state"> INITIALIZING ADMIN_CORE... </div>
-                                                            </main>
- </div>
-                                                              `
+      <div class="admin-page">
+        <aside class="admin-sidebar">
+          <div class="admin-sidebar-header">
+            <span class="admin-label">ADMIN_SYSTEM v1.0</span>
+            <button id="adminLogout" class="admin-logout-btn">LOGOUT</button>
+          </div>
+          <nav class="admin-nav">
+            <a href="#admin/orders" class="admin-nav-link ${subRoute === 'orders' ? 'active' : ''}">
+              <span class="nav-icon">📊</span> ORDERS
+            </a>
+            <a href="#admin/products" class="admin-nav-link ${subRoute === 'products' ? 'active' : ''}">
+              <span class="nav-icon">📦</span> PRODUCTS
+            </a>
+            <a href="#collection" class="admin-nav-link exit">
+              <span class="nav-icon">←</span> EXIT_ADMIN
+            </a>
+          </nav>
+        </aside>
+        <main class="admin-main" id="adminMain">
+          <div class="loading-state">INITIALIZING ADMIN_CORE...</div>
+        </main>
+      </div>
+    `
 
     const adminMain = document.getElementById('adminMain')
     if (!adminMain) return
+
+    // Logout handler
+    document.getElementById('adminLogout')?.addEventListener('click', async () => {
+      await Auth.logout()
+      this.renderAdmin(contentDiv)
+    })
 
     if (subRoute === 'orders') {
       await this.renderAdminOrders(adminMain)
@@ -829,30 +842,30 @@ export class Pages {
 
   private async renderAdminOrders(container: HTMLElement): Promise<void> {
     container.innerHTML = `
-                                                            < header class="admin-header">
-                                                              <h1>ORDER_MANAGEMENT</h1>
-                                                               <div class="admin-header-actions">
-                                                                <button class="btn-refresh" id="refreshOrders"> EXEC_REFRESH</button>
- </div>
-                                                                  </header>
-                                                                   <div class="admin-table-container">
-                                                                    <table class="admin-table">
-                                                                      <thead>
-                                                                      <tr>
-                                                                      <th>ID </th>
-                                                                      < th > CUSTOMER </th>
-                                                                      < th > DATE </th>
-                                                                      < th > TOTAL </th>
-                                                                      < th > STATUS </th>
-                                                                      < th > ACTIONS </th>
-                                                                      </tr>
-                                                                      </thead>
-                                                                      < tbody id="ordersTableBody">
-                                                                        <tr><td colspan="6" class="table-loading"> DATA_LINK_ESTABLISHING...</td></tr >
-                                                                          </tbody>
-                                                                          </table>
- </div>
-                                                                            `
+      <header class="admin-header">
+        <h1>ORDER_MANAGEMENT</h1>
+        <div class="admin-header-actions">
+          <button class="btn-refresh" id="refreshOrders">EXEC_REFRESH</button>
+        </div>
+      </header>
+      <div class="admin-table-container">
+        <table class="admin-table">
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>CUSTOMER</th>
+              <th>DATE</th>
+              <th>TOTAL</th>
+              <th>STATUS</th>
+              <th>ACTIONS</th>
+            </tr>
+          </thead>
+          <tbody id="ordersTableBody">
+            <tr><td colspan="6" class="table-loading">DATA_LINK_ESTABLISHING...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    `
 
     const refreshBtn = document.getElementById('refreshOrders')
     refreshBtn?.addEventListener('click', () => this.renderAdminOrders(container))
@@ -882,29 +895,29 @@ export class Pages {
       }
 
       tbody.innerHTML = allOrders.map((order: any) => `
-                                                                          < tr data - id="${order.id}">
-                                                                            <td class="order-id"> #${order.id.toString().slice(-6).toUpperCase()} </td>
-                                                                              < td class="order-customer">
-                                                                                <div class="customer-name"> ${order.customer_name} </div>
-                                                                                   <div class="customer-email"> ${order.customer_email} </div>
-                                                                                    </td>
-                                                                                    < td class="order-date"> ${new Date(order.created_at || Date.now()).toLocaleDateString()} </td>
-                                                                                      < td class="order-total"> $${order.total} .00 </td>
-                                                                                        < td class="order-status">
-                                                                                          <select class="status-select" data - id="${order.id}">
-                                                                                            <option value="pending" ${order.status === 'pending' ? 'selected' : ''}> PENDING </option>
-                                                                                              < option value = "processing" ${order.status === 'processing' ? 'selected' : ''}> PROCESSING </option>
-                                                                                                < option value = "shipped" ${order.status === 'shipped' ? 'selected' : ''}> SHIPPED </option>
-                                                                                                  < option value = "delivered" ${order.status === 'delivered' ? 'selected' : ''}> DELIVERED </option>
-                                                                                                    < option value = "cancelled" ${order.status === 'cancelled' ? 'selected' : ''}> CANCELLED </option>
-                                                                                                      </select>
-                                                                                                      </td>
-                                                                                                      < td class="order-actions">
-                                                                                                        <button class="btn-invoice" data - id="${order.id}"> GEN_INVOICE</button>
-                                                                                                           <button class="btn-view-details" data - id="${order.id}"> VIEW_LOG</button>
-                                                                                                            </td>
-                                                                                                            </tr>
-                                                                                                              `).join('')
+        <tr data-id="${order.id}">
+          <td class="order-id">#${order.id.toString().slice(-6).toUpperCase()}</td>
+          <td class="order-customer">
+            <div class="customer-name">${order.customer_name}</div>
+            <div class="customer-email">${order.customer_email}</div>
+          </td>
+          <td class="order-date">${new Date(order.created_at || Date.now()).toLocaleDateString()}</td>
+          <td class="order-total">$${order.total}.00</td>
+          <td class="order-status">
+            <select class="status-select" data-id="${order.id}">
+              <option value="pending" ${order.status === 'pending' ? 'selected' : ''}>PENDING</option>
+              <option value="processing" ${order.status === 'processing' ? 'selected' : ''}>PROCESSING</option>
+              <option value="shipped" ${order.status === 'shipped' ? 'selected' : ''}>SHIPPED</option>
+              <option value="delivered" ${order.status === 'delivered' ? 'selected' : ''}>DELIVERED</option>
+              <option value="cancelled" ${order.status === 'cancelled' ? 'selected' : ''}>CANCELLED</option>
+            </select>
+          </td>
+          <td class="order-actions">
+            <button class="btn-invoice" data-id="${order.id}">GEN_INVOICE</button>
+            <button class="btn-view-details" data-id="${order.id}">VIEW_LOG</button>
+          </td>
+        </tr>
+      `).join('')
 
       // Add listeners
       tbody.querySelectorAll('.btn-invoice').forEach(btn => {
@@ -940,25 +953,25 @@ export class Pages {
 
   private renderAdminProducts(container: HTMLElement): void {
     container.innerHTML = `
-      < header class="admin-header">
+      <header class="admin-header">
         <h1>PRODUCT_INVENTORY</h1>
-         <div class="admin-header-actions">
-          <a href="#admin/create-product" class="btn-add-product"> ADD_NEW_UNIT </a>
- </div>
-            </header>
-             <div class="admin-table-container">
-              <table class="admin-table">
-                <thead>
-                <tr>
-                <th>UNIT_ID </th>
-                < th > NAME </th>
-                < th > PRICE </th>
-                < th > STOCK_QTY </th>
-                < th > STATUS </th>
-                < th > ACTIONS </th>
-                </tr>
-                </thead>
-                <tbody>
+        <div class="admin-header-actions">
+          <a href="#admin/create-product" class="btn-add-product">ADD_NEW_UNIT</a>
+        </div>
+      </header>
+      <div class="admin-table-container">
+        <table class="admin-table">
+          <thead>
+            <tr>
+              <th>UNIT_ID</th>
+              <th>NAME</th>
+              <th>PRICE</th>
+              <th>STOCK_QTY</th>
+              <th>STATUS</th>
+              <th>ACTIONS</th>
+            </tr>
+          </thead>
+          <tbody>
             ${catalogs.map(product => `
               <tr data-id="${product.id}">
                 <td>${product.id}</td>
@@ -978,17 +991,16 @@ export class Pages {
                   <button class="btn-save-product" data-id="${product.id}">SAVE</button>
                 </td>
               </tr>
-            `).join('')
-      }
-    </tbody>
-      </table>
- </div>
-        `
+            `).join('')}
+          </tbody>
+        </table>
+      </div>
+    `
 
     container.querySelectorAll('.btn-save-product').forEach(btn => {
       btn.addEventListener('click', () => {
         const id = btn.getAttribute('data-id')
-        const row = container.querySelector(`tr[data - id= "${id}"]`)
+        const row = container.querySelector(`tr[data-id="${id}"]`)
         const stockInput = row?.querySelector('.stock-input') as HTMLInputElement
         const activeToggle = row?.querySelector('.active-toggle') as HTMLInputElement
 
@@ -1163,6 +1175,57 @@ export class Pages {
       setTimeout(() => {
         feedback.innerHTML = `<div class="success-msg">INVOICE SUCCESSFULLY DELIVERED TO CUSTOMER UNIT. </div>`
       }, 2000)
+    })
+  }
+
+  private renderAdminLogin(contentDiv: HTMLElement): void {
+    contentDiv.innerHTML = `
+      <div class="admin-login-page">
+        <div class="admin-login-container">
+          <div class="admin-login-header">
+            <span class="admin-label">ADMIN_AUTH_REQUIRED</span>
+            <h1>ACCESS RESTRICTED</h1>
+            <p>Please authenticate to access the NOUIE internal management system.</p>
+          </div>
+          
+          <form id="adminLoginForm" class="admin-login-form">
+            <div class="form-group">
+              <label>ADMIN_EMAIL</label>
+              <input type="email" id="adminEmail" required placeholder="admin@nouie.com">
+            </div>
+            <div class="form-group">
+              <label>SECURITY_KEY</label>
+              <input type="password" id="adminPassword" required placeholder="••••••••">
+            </div>
+            <button type="submit" class="btn-admin-login">INITIATE_SESSION</button>
+            <div id="authFeedback" class="auth-feedback"></div>
+          </form>
+          
+          <div class="admin-login-footer">
+            <a href="#home" class="btn-back-home">← RETURN TO PUBLIC_SYSTEM</a>
+          </div>
+        </div>
+      </div>
+    `
+
+    const form = document.getElementById('adminLoginForm') as HTMLFormElement
+    const feedback = document.getElementById('authFeedback')
+
+    form?.addEventListener('submit', async (e) => {
+      e.preventDefault()
+      const email = (document.getElementById('adminEmail') as HTMLInputElement).value
+      const password = (document.getElementById('adminPassword') as HTMLInputElement).value
+
+      if (feedback) feedback.innerHTML = '<span class="loading">AUTHENTICATING...</span>'
+
+      const { error } = await Auth.login(email, password)
+
+      if (error) {
+        if (feedback) feedback.innerHTML = `<span class="error">AUTH_FAILED: ${error.message.toUpperCase()}</span>`
+      } else {
+        if (feedback) feedback.innerHTML = '<span class="success">SESSION_ESTABLISHED</span>'
+        setTimeout(() => this.renderAdmin(contentDiv), 1000)
+      }
     })
   }
 }
