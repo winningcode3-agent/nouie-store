@@ -376,23 +376,8 @@ export class Pages {
     const grid = document.getElementById('collection-grid')
     if (!grid) return
 
-    try {
-      const { data: dbCatalogs, error: _error } = await supabase
-        .from('collections')
-        .select('*')
-        .order('id', { ascending: true })
-
-      if (_error || !dbCatalogs || dbCatalogs.length === 0) {
-        console.log('Using local fallback data')
-        this.renderCatalogGrid(grid, catalogs)
-      } else {
-        console.log('Using Supabase data')
-        this.renderCatalogGrid(grid, dbCatalogs)
-      }
-    } catch {
-      this.renderCatalogGrid(grid, catalogs)
-    }
-
+    // Use local catalog data for consistent product names
+    this.renderCatalogGrid(grid, catalogs)
   }
 
   private renderCatalogGrid(container: HTMLElement, cats: Product[]): void {

@@ -5,55 +5,56 @@ import type { Product, TechnicalMetadata, ArchiveSeason } from './types'
 export const catalogs: Product[] = [
     {
         id: 'CAT01',
-        name: 'WAFFLE HOODIE',
+        name: 'SOLDIER THERMALS',
         season: 'SS26',
-        price: 245,
-        description: 'Premium utility hoodie featuring reinforced seams and refined technical panels. Designed for versatility and form.',
+        price: 67.99,
+        description: 'Oversized thermal long-sleeve featuring hand-drawn soldier graphics. Premium cotton-blend construction with signature sleeve art.',
         sizes: ['S', 'M', 'L', 'XL', 'XXL'],
-        images: ['cat1_1.jpg', 'cat1_2.jpg', 'cat1_3.jpg', 'cat1_4.png'],
+        images: ['soldier_thermal_1.jpg', 'cat1_2.jpg', 'cat1_3.jpg', 'cat1_4.png'],
         stock_qty: 42,
         is_active: true,
-        sku: 'NOUIE-SS26-WH-01',
+        sku: 'NOUIE-SS26-ST-01',
         brand: 'NOUIE',
-        color: 'BLACK',
-        material: 'REINFORCED NYLON / POLY'
+        color: 'CREAM',
+        material: 'COTTON BLEND / THERMAL KNIT'
     },
     {
         id: 'CAT02',
-        name: 'TECHNICAL CARGO',
+        name: 'NOUIE TEE',
         season: 'SS26',
-        price: 320,
-        description: 'Refined cargo system with water-resistant ripstop construction. Multiple utility pockets with minimalist ventilation.',
+        price: 67.99,
+        description: 'Premium cotton tee with signature NOUIE graphics. Clean lines and modern fit.',
         sizes: ['S', 'M', 'L', 'XL'],
         images: ['cat2_1.jpg', 'cat2_2.jpg', 'cat2_3.jpg', 'cat2_4.jpg'],
         stock_qty: 15,
         is_active: true,
-        sku: 'NOUIE-SS26-TC-02',
+        sku: 'NOUIE-SS26-NT-02',
         brand: 'NOUIE',
-        color: 'GREY',
-        material: 'WATER-RESISTANT RIPSTOP / MESH'
+        color: 'BLACK',
+        material: 'PREMIUM COTTON'
     },
     {
         id: 'CAT03',
-        name: 'MESH VEST',
+        name: 'NOUIE JERSEY',
         season: 'SS26',
-        price: 195,
-        description: 'Lightweight mesh vest with laser-cut synthetic panels. Subtle detailing for modern urban navigation.',
+        price: 44.77,
+        description: 'Classic mesh jersey with breathable construction. Perfect for layering or standalone wear.',
         sizes: ['M', 'L', 'XL'],
         images: ['cat3_1.png', 'cat3_2.png', 'cat3_3.png', 'cat3_4.png'],
         stock_qty: 8,
         is_active: true,
-        sku: 'NOUIE-SS26-MV-03',
+        sku: 'NOUIE-SS26-NJ-03',
         brand: 'NOUIE',
         color: 'BLACK',
-        material: 'LASER-CUT SYNTHETIC / CORD'
+        material: 'MESH / POLYESTER'
     }
 ]
 
+
 export const technicalMetadata: Record<string, TechnicalMetadata> = {
-    'CAT01': { material: 'REINFORCED NYLON / POLY', weight: '450GSM', zone: 'NORTH_STUDIO' },
-    'CAT02': { material: 'WATER-RESISTANT RIPSTOP / MESH', weight: '320GSM', zone: 'EAST_STUDIO' },
-    'CAT03': { material: 'LASER-CUT SYNTHETIC / CORD', weight: '280GSM', zone: 'SOUTH_STUDIO' }
+    'CAT01': { material: 'COTTON BLEND / THERMAL KNIT', weight: '380GSM', zone: 'NORTH_STUDIO' },
+    'CAT02': { material: 'PREMIUM COTTON', weight: '180GSM', zone: 'EAST_STUDIO' },
+    'CAT03': { material: 'MESH / POLYESTER', weight: '200GSM', zone: 'SOUTH_STUDIO' }
 }
 
 export const archiveSeasons: ArchiveSeason[] = [
@@ -71,7 +72,7 @@ export const archiveSeasons: ArchiveSeason[] = [
         title: 'SEASON 02',
         year: '2025',
         description: 'Expanding the universe with technical fabrics and refined aesthetics.',
-        highlights: ['CARGO SYSTEM', 'DOT SERIES', 'TONE EXPANSION'],
+        highlights: ['NOUIE TEE', 'DOT SERIES', 'TONE EXPANSION'],
         images: ['cat2_1.jpg', 'cat2_2.jpg'],
         instagramTag: '@_nouie'
     },
@@ -80,7 +81,7 @@ export const archiveSeasons: ArchiveSeason[] = [
         title: 'SEASON 03',
         year: '2025',
         description: 'Current evolution. Precision meets wearable design.',
-        highlights: ['WAFFLE UNIT', 'CARGO SYSTEM', 'MESH VEST'],
+        highlights: ['SOLDIER THERMALS', 'NOUIE TEE', 'NOUIE JERSEY'],
         images: ['cat3_1.png', 'cat3_2.png'],
         instagramTag: '@_nouie'
     }
