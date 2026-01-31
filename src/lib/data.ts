@@ -12,7 +12,11 @@ export const catalogs: Product[] = [
         sizes: ['S', 'M', 'L', 'XL', 'XXL'],
         images: ['cat1_1.jpg', 'cat1_2.jpg', 'cat1_3.jpg', 'cat1_4.png'],
         stock_qty: 42,
-        is_active: true
+        is_active: true,
+        sku: 'NOUIE-SS26-WH-01',
+        brand: 'NOUIE',
+        color: 'BLACK',
+        material: 'REINFORCED NYLON / POLY'
     },
     {
         id: 'CAT02',
@@ -23,7 +27,11 @@ export const catalogs: Product[] = [
         sizes: ['S', 'M', 'L', 'XL'],
         images: ['cat2_1.jpg', 'cat2_2.jpg', 'cat2_3.jpg', 'cat2_4.jpg'],
         stock_qty: 15,
-        is_active: true
+        is_active: true,
+        sku: 'NOUIE-SS26-TC-02',
+        brand: 'NOUIE',
+        color: 'GREY',
+        material: 'WATER-RESISTANT RIPSTOP / MESH'
     },
     {
         id: 'CAT03',
@@ -34,7 +42,11 @@ export const catalogs: Product[] = [
         sizes: ['M', 'L', 'XL'],
         images: ['cat3_1.png', 'cat3_2.png', 'cat3_3.png', 'cat3_4.png'],
         stock_qty: 8,
-        is_active: true
+        is_active: true,
+        sku: 'NOUIE-SS26-MV-03',
+        brand: 'NOUIE',
+        color: 'BLACK',
+        material: 'LASER-CUT SYNTHETIC / CORD'
     }
 ]
 

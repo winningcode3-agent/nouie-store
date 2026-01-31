@@ -430,6 +430,18 @@ body {
   background: var(--accent-red);
 }
 
+.btn-add-cart.disabled {
+  background: var(--border-light);
+  color: var(--text-secondary);
+  cursor: not-allowed;
+  border: 1px solid var(--border-light);
+}
+
+.btn-add-cart.disabled:hover {
+  background: var(--border-light);
+  color: var(--text-secondary);
+}
+
 @media (max-width: 768px) {
   .cart-drawer {
     width: 100%;
@@ -544,6 +556,36 @@ body {
   color: var(--text-primary);
   text-decoration: none;
   text-transform: uppercase;
+}
+
+.menu-drawer-footer {
+  padding: 40px;
+  border-top: 1px solid var(--border-light);
+  margin-top: auto;
+}
+
+.instagram-nav-btn {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  color: var(--text-primary);
+  text-decoration: none;
+  transition: all 0.3s ease;
+  padding: 12px 0;
+}
+
+.instagram-nav-btn svg {
+  width: 20px;
+  height: 20px;
+  opacity: 0.8;
+}
+
+.instagram-nav-btn:hover {
+  color: var(--accent-red);
+  transform: translateX(5px);
 }
 
 /* Page Layout Refinement for Footer */
@@ -1080,6 +1122,228 @@ body {
   text-shadow: -2px 0 #00fff9;
   clip: rect(85px, 550px, 140px, 0);
   animation: glitch-skew 2s infinite linear alternate-reverse;
+}
+
+/* Legal & Info Pages Styling (Shipping, Returns, Privacy) */
+.legal-page {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 60px 20px 100px;
+}
+
+.legal-header {
+  margin-bottom: 80px;
+  border-bottom: 1px solid var(--border-light);
+  padding-bottom: 40px;
+}
+
+.legal-header h1 {
+  font-size: 42px;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  margin-bottom: 15px;
+  color: var(--text-primary);
+}
+
+.legal-header p {
+  font-size: 11px;
+  letter-spacing: 0.1em;
+  color: var(--text-secondary);
+  font-weight: 700;
+}
+
+.legal-section {
+  margin-bottom: 60px;
+}
+
+.legal-section h2 {
+  font-size: 14px;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  margin-bottom: 25px;
+  text-transform: uppercase;
+  color: var(--text-primary);
+}
+
+.legal-section p {
+  font-size: 15px;
+  line-height: 1.7;
+  color: var(--text-secondary);
+  margin-bottom: 20px;
+  letter-spacing: -0.01em;
+}
+
+.legal-list {
+  margin-bottom: 25px;
+  padding-left: 20px;
+}
+
+.legal-list li {
+  font-size: 15px;
+  line-height: 1.7;
+  color: var(--text-secondary);
+  margin-bottom: 15px;
+  letter-spacing: -0.01em;
+  list-style-type: square;
+}
+
+.legal-section strong {
+  color: var(--text-primary);
+}
+
+/* Contact Page Specifics */
+.contact-layout {
+  display: flex;
+  flex-direction: column;
+  gap: 60px;
+}
+
+.contact-info-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 30px;
+}
+
+.contact-card {
+  padding: 30px;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-light);
+}
+
+.contact-card h3 {
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  margin-bottom: 15px;
+  color: var(--text-primary);
+}
+
+.contact-card p {
+  font-size: 13px;
+  color: var(--text-secondary);
+  margin-bottom: 20px;
+  line-height: 1.6;
+}
+
+.contact-link {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--text-primary);
+  text-decoration: underline;
+  letter-spacing: 0.02em;
+}
+
+/* Contact Form */
+.contact-form {
+  display: flex;
+  flex-direction: column;
+  gap: 30px;
+  max-width: 700px;
+}
+
+.form-row {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 20px;
+}
+
+.contact-form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.contact-form-group label {
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  color: var(--text-secondary);
+}
+
+.contact-form-group input,
+.contact-form-group select,
+.contact-form-group textarea {
+  padding: 15px;
+  background: transparent;
+  border: 1px solid var(--border-light);
+  color: var(--text-primary);
+  font-size: 14px;
+  font-family: inherit;
+  transition: border-color 0.3s ease;
+}
+
+.contact-form-group input:focus,
+.contact-form-group select:focus,
+.contact-form-group textarea:focus {
+  outline: none;
+  border-color: var(--text-primary);
+}
+
+.btn-contact-submit {
+  padding: 20px;
+  background: var(--text-primary);
+  color: var(--bg-primary);
+  border: none;
+  font-weight: 800;
+  font-size: 12px;
+  letter-spacing: 0.1em;
+  cursor: pointer;
+  transition: opacity 0.3s ease;
+}
+
+.btn-contact-submit:hover {
+  opacity: 0.9;
+}
+
+@media (max-width: 768px) {
+
+  .contact-info-grid,
+  .form-row {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Shipping Tables */
+.shipping-table {
+  border: 1px solid var(--border-light);
+  margin-bottom: 30px;
+}
+
+.table-row {
+  display: grid;
+  grid-template-columns: 1.5fr 1.5fr 1fr;
+  padding: 15px 20px;
+  border-bottom: 1px solid var(--border-light);
+  font-size: 13px;
+  color: var(--text-primary);
+}
+
+.table-row:last-child {
+  border-bottom: none;
+}
+
+.table-header {
+  background: var(--bg-secondary);
+  font-weight: 800;
+  font-size: 11px;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+@media (max-width: 768px) {
+  .legal-header h1 {
+    font-size: 32px;
+  }
+
+  .table-row {
+    grid-template-columns: 1fr;
+    gap: 5px;
+    padding: 20px;
+  }
+
+  .table-header {
+    display: none;
+  }
 }
 
 /* Enhanced Lookbook */

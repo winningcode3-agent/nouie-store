@@ -10,6 +10,21 @@ export interface Product {
     images: string[]
     stock_qty?: number
     is_active?: boolean
+    sku: string
+    brand: string
+    color: string
+    material?: string
+    variants?: ProductVariant[]
+}
+
+export interface ProductVariant {
+    id: string
+    name: string
+    sku: string
+    color: string
+    price: number
+    stock_qty: number
+    images: string[]
 }
 
 export interface CartItem {
