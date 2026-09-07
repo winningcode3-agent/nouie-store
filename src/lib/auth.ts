@@ -39,12 +39,24 @@ export class Auth {
     /**
      * Checks if the current user has admin privileges
      */
-    static async isAdmin() {
+    static async isAdmin(): Promise<boolean> {
         const { session } = await this.getSession()
-        if (!session || !session.user) return false
+        if (!session || !session.user || !session.user.email) return false
 
-        // Whitelist. Dwe matche règ RLS yo nan Supabase (products/orders policies).
-        const adminEmails = ['admin@nouie.com']
-        return adminEmails.includes(session.user.email || '')
+        try {
+            const { data, error } = await supabase
+                .from('admins')
+                .select('email')
+                .eq('email', session.user.email)
+                .maybeSingle()
+
+            if (error) {
+                // Fallback sou admin@nouie.com si tab la poko aksesib
+                return session.user.email === 'admin@nouie.com'
+            }
+            return !!data
+        } catch {
+            return session.user.email === 'admin@nouie.com'
+        }
     }
 }
