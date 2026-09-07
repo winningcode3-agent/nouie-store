@@ -97,10 +97,9 @@ You agree to provide current, complete, and accurate purchase and account inform
 # INTELLECTUAL PROPERTY
 All graphics, designs, logos, product names, and content appearing on this site are the exclusive property of NOUIE.')
 
-ON CONFLICT (slug) DO UPDATE SET
-  title = EXCLUDED.title,
-  body = EXCLUDED.body,
-  updated_at = NOW();
+-- DO NOTHING, pa DO UPDATE: yon seed pa gen dwa ekrase tèks Franckley
+-- modifye nan panèl admin lan. Migrasyon 0009 la ki mete bon tèks la.
+ON CONFLICT (slug) DO NOTHING;
 
 -- Verifikasyon
 SELECT slug, title, length(body) as body_length FROM public.pages;

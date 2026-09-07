@@ -1851,7 +1851,7 @@ export class AdminDashboard {
               </tr>
             ` : ''}
             <tr class="final-total">
-              <td colspan="3">TOTAL AMOUNT PAID</td>
+              <td colspan="3">TOTAL</td>
               <td>$${Number(order.total).toFixed(2)} USD</td>
             </tr>
           </tfoot>

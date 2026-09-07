@@ -6,7 +6,7 @@ import { catalogs, archiveSeasons } from '../lib/data'
 import type { Product, Collection } from '../lib/types'
 import { SEO } from '../lib/seo'
 import { settingsService } from '../lib/settings'
-import { renderSafeMarkdown } from '../lib/markdown'
+import { renderSafeMarkdown, escapeHtml } from '../lib/markdown'
 
 export class Pages {
   private contentDiv: HTMLElement | null = null
@@ -64,7 +64,7 @@ export class Pages {
     contentDiv.innerHTML = `
       <div class="legal-page">
         <div class="legal-header">
-          <h1>${pageTitle}</h1>
+          <h1>${escapeHtml(pageTitle)}</h1>
           <p>LAST UPDATED: ${dateStr}</p>
         </div>
         <div class="legal-content">
@@ -708,7 +708,22 @@ All graphics, designs, logos, product names, and content appearing on this site 
     `
   }
 
+  private checkoutUnsubscribe: (() => void) | null = null
+
   private async renderCheckout(contentDiv: HTMLElement): Promise<void> {
+    // Rezime checkout la dwe swiv panyen an. San sa, si kliyan an chanje yon
+    // kantite nan tiwa panyen an pandan li sou paj sa a, li rete ap gade yon
+    // ansyen total pandan sèvè a ap chaje yon lòt.
+    this.checkoutUnsubscribe?.()
+    this.checkoutUnsubscribe = cartStore.subscribe(() => {
+      if (window.location.hash.replace('#', '') !== 'checkout') {
+        this.checkoutUnsubscribe?.()
+        this.checkoutUnsubscribe = null
+        return
+      }
+      void this.renderCheckout(contentDiv)
+    })
+
     const items = cartStore.getItems()
 
     if (items.length === 0) {
@@ -745,9 +760,10 @@ All graphics, designs, logos, product names, and content appearing on this site 
 
     const renderTotals = () => {
       const shipCost = calcShipping(shippingMethod, subtotal)
-      const taxCost = calcTax(subtotal)
       const discountAmt = appliedDiscount ? appliedDiscount.discount_amount : 0.00
-      const finalTotal = Math.max(0, subtotal + shipCost + taxCost - discountAmt)
+      // Taks la kalkile sou baz APRE rabè — dwe rete idantik ak place_order().
+      const taxCost = calcTax(Math.max(0, subtotal - discountAmt))
+      const finalTotal = Math.max(0, subtotal - discountAmt + shipCost + taxCost)
 
       const isFree = shippingMethod === 'standard' && subtotal >= shippingConf.free_threshold
       const shipText = isFree ? 'FREE' : `$${shipCost.toFixed(2)}`
