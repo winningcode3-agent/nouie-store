@@ -3,8 +3,10 @@
 import { supabase } from '../lib/supabase'
 import { cartStore } from '../lib/store'
 import { catalogs, archiveSeasons } from '../lib/data'
-import type { Product } from '../lib/types'
+import type { Product, Collection } from '../lib/types'
 import { SEO } from '../lib/seo'
+import { settingsService } from '../lib/settings'
+import { renderSafeMarkdown } from '../lib/markdown'
 
 export class Pages {
   private contentDiv: HTMLElement | null = null
@@ -24,222 +26,135 @@ export class Pages {
     return this.contentDiv
   }
 
-  private renderShipping(contentDiv: HTMLElement): void {
+  private async renderLegalPage(contentDiv: HTMLElement, slug: string, defaultTitle: string, fallbackMarkdown: string): Promise<void> {
     contentDiv.innerHTML = `
       <div class="legal-page">
         <div class="legal-header">
-          <h1>SHIPPING POLICY</h1>
-          <p>LAST UPDATED: JANUARY 2026</p>
+          <h1>${defaultTitle}</h1>
+          <p class="legal-loading">SYNCING DOCUMENT DATA...</p>
         </div>
-        
         <div class="legal-content">
-          <section class="legal-section">
-            <h2>ORDER PROCESSING</h2>
-            <p>ALL ORDERS ARE PROCESSED WITHIN 2-4 BUSINESS DAYS (EXCLUDING WEEKENDS AND HOLIDAYS) AFTER RECEIVING YOUR ORDER CONFIRMATION EMAIL. YOU WILL RECEIVE ANOTHER NOTIFICATION WHEN YOUR ORDER HAS SHIPPED.</p>
-            <p>PLEASE NOTE THAT DURING HIGH-VOLUME PERIODS OR NEW RELEASES, PROCESSING TIMES MAY BE SLIGHTLY EXTENDED.</p>
-          </section>
+          <div class="loading-state">LOADING CONTENT...</div>
+        </div>
+      </div>
+    `
 
-          <section class="legal-section">
-            <h2>DOMESTIC SHIPPING (USA)</h2>
-            <div class="shipping-table">
-              <div class="table-row table-header">
-                <div>METHOD</div>
-                <div>ESTIMATED DELIVERY</div>
-                <div>COST</div>
-              </div>
-              <div class="table-row">
-                <div>STANDARD</div>
-                <div>5-7 BUSINESS DAYS</div>
-                <div>$10.00</div>
-              </div>
-              <div class="table-row">
-                <div>EXPRESS</div>
-                <div>2-3 BUSINESS DAYS</div>
-                <div>$25.00</div>
-              </div>
-            </div>
-            <p>FREE STANDARD SHIPPING ON DOMESTIC ORDERS OVER $250.</p>
-          </section>
+    let pageTitle = defaultTitle
+    let pageMarkdown = fallbackMarkdown
+    let updatedAt: string | null = null
 
-          <section class="legal-section">
-            <h2>INTERNATIONAL SHIPPING</h2>
-            <p>WE SHIP WORLDWIDE. SHIPPING CHARGES FOR YOUR ORDER WILL BE CALCULATED AND DISPLAYED AT CHECKOUT.</p>
-            <div class="shipping-table">
-              <div class="table-row table-header">
-                <div>REGION</div>
-                <div>ESTIMATED DELIVERY</div>
-                <div>COST</div>
-              </div>
-              <div class="table-row">
-                <div>CANADA</div>
-                <div>7-14 BUSINESS DAYS</div>
-                <div>CALCULATED AT CHECKOUT</div>
-              </div>
-              <div class="table-row">
-                <div>EUROPE / ASIA</div>
-                <div>10-21 BUSINESS DAYS</div>
-                <div>CALCULATED AT CHECKOUT</div>
-              </div>
-            </div>
-            <p><strong>CUSTOMS, DUTIES, AND TAXES:</strong> NOUIE IS NOT RESPONSIBLE FOR ANY CUSTOMS AND TAXES APPLIED TO YOUR ORDER. ALL FEES IMPOSED DURING OR AFTER SHIPPING ARE THE RESPONSIBILITY OF THE CUSTOMER (TARIFFS, TAXES, ETC.).</p>
-          </section>
+    try {
+      const { data, error } = await supabase
+        .from('pages')
+        .select('*')
+        .eq('slug', slug)
+        .maybeSingle()
 
-          <section class="legal-section">
-            <h2>TRACKING YOUR ORDER</h2>
-            <p>WHEN YOUR ORDER HAS SHIPPED, YOU WILL RECEIVE AN EMAIL NOTIFICATION FROM US WHICH WILL INCLUDE A TRACKING NUMBER YOU CAN USE TO CHECK ITS STATUS. PLEASE ALLOW 48 HOURS FOR THE TRACKING INFORMATION TO BECOME AVAILABLE.</p>
-            <p>IF YOU HAVE NOT RECEIVED YOUR ORDER WITHIN 14 DAYS OF RECEIVING YOUR SHIPPING CONFIRMATION EMAIL, PLEASE CONTACT US AT SUPPORT@NOUIE.COM WITH YOUR NAME AND ORDER NUMBER, AND WE WILL LOOK INTO IT FOR YOU.</p>
-          </section>
+      if (!error && data) {
+        pageTitle = data.title || defaultTitle
+        pageMarkdown = data.body || fallbackMarkdown
+        updatedAt = data.updated_at
+      }
+    } catch (e) {
+      console.warn(`Could not load page ${slug}, using fallback:`, e)
+    }
+
+    const dateStr = updatedAt ? new Date(updatedAt).toLocaleDateString(undefined, { year: 'numeric', month: 'long' }).toUpperCase() : 'CURRENT'
+
+    contentDiv.innerHTML = `
+      <div class="legal-page">
+        <div class="legal-header">
+          <h1>${pageTitle}</h1>
+          <p>LAST UPDATED: ${dateStr}</p>
+        </div>
+        <div class="legal-content">
+          ${renderSafeMarkdown(pageMarkdown)}
         </div>
       </div>
     `
   }
 
-  private renderReturns(contentDiv: HTMLElement): void {
-    contentDiv.innerHTML = `
-      <div class="legal-page">
-        <div class="legal-header">
-          <h1>RETURNS & EXCHANGES</h1>
-          <p>LAST UPDATED: JANUARY 2026</p>
-        </div>
-        
-        <div class="legal-content">
-          <section class="legal-section">
-            <h2>RETURN POLICY</h2>
-            <p>WE WANT YOU TO BE COMPLETELY SATISFIED WITH YOUR PURCHASE. IF YOU ARE NOT SATISFIED, YOU MAY RETURN YOUR ITEM(S) WITHIN 14 DAYS OF DELIVERY FOR AN EXCHANGE OR STORE CREDIT.</p>
-            <p><strong>PLEASE NOTE:</strong> ALL RETURNS MUST BE IN THEIR ORIGINAL CONDITION—UNWORN, UNWASHED, AND WITH ALL TAGS ATTACHED. ITEMS THAT DO NOT MEET THESE CRITERIA WILL BE DENIED.</p>
-          </section>
+  private async renderShipping(contentDiv: HTMLElement): Promise<void> {
+    const shippingConf = await settingsService.getShipping()
+    const defaultBody = `# ORDER PROCESSING
+All orders are processed within 2-4 business days (excluding weekends and holidays) after receiving your order confirmation email. You will receive another notification when your order has shipped.
 
-          <section class="legal-section">
-            <h2>EXCHANGES</h2>
-            <p>WE ONLY OFFER EXCHANGES FOR DIFFERENT SIZES OF THE SAME ITEM, SUBJECT TO AVAILABILITY. IF THE DESIRED SIZE IS OUT OF STOCK, A STORE CREDIT WILL BE ISSUED.</p>
-          </section>
+Please note that during high-volume periods or new releases, processing times may be slightly extended.
 
-          <section class="legal-section">
-            <h2>RETURN PROCESS</h2>
-            <p>TO INITIATE A RETURN, PLEASE FOLLOW THESE STEPS:</p>
-            <ol class="legal-list">
-              <li>EMAIL <strong>RETURNS@NOUIE.COM</strong> WITH YOUR ORDER NUMBER AND THE ITEM(S) YOU WISH TO RETURN.</li>
-              <li>ONCE APPROVED, YOU WILL RECEIVE A RETURN AUTHORIZATION NUMBER AND THE RETURN SHIPPING ADDRESS.</li>
-              <li>PACK YOUR ITEM(S) SECURELY AND INCLUDE THE RETURN AUTHORIZATION NUMBER INSIDE THE PACKAGE.</li>
-              <li>SHIP THE PACKAGE USING A TRACKABLE SHIPPING METHOD.</li>
-            </ol>
-            <p>CUSTOMERS ARE RESPONSIBLE FOR RETURN SHIPPING COSTS UNLESS THE ITEM RECEIVED WAS DAMAGED OR INCORRECT.</p>
-          </section>
+# DOMESTIC SHIPPING (USA)
+We offer domestic standard and express shipping options across the United States.
 
-          <section class="legal-section">
-            <h2>REFUNDS & STORE CREDIT</h2>
-            <p>ONCE YOUR RETURN IS RECEIVED AND INSPECTED, WE WILL NOTIFY YOU OF THE APPROVAL OR REJECTION OF YOUR RETURN.</p>
-            <p>IF APPROVED, A STORE CREDIT WILL BE ISSUED IN THE FORM OF A DIGITAL GIFT CARD WITHIN 5-7 BUSINESS DAYS. PLEASE NOTE THAT INITIAL SHIPPING COSTS ARE NON-REFUNDABLE.</p>
-          </section>
+- **STANDARD (${shippingConf.standard_days} BUSINESS DAYS)**: $${shippingConf.standard.toFixed(2)} (FREE STANDARD SHIPPING ON DOMESTIC ORDERS OVER $${shippingConf.free_threshold.toFixed(2)})
+- **EXPRESS (${shippingConf.express_days} BUSINESS DAYS)**: $${shippingConf.express.toFixed(2)}
 
-          <section class="legal-section">
-            <h2>FINAL SALE ITEMS</h2>
-            <p>ITEMS MARKED AS "FINAL SALE" OR PURCHASED DURING ARCHIVE RELEASES ARE NOT ELIGIBLE FOR RETURN OR EXCHANGE. PLEASE REVIEW PRODUCT DESCRIPTIONS CAREFULLY BEFORE PURCHASING.</p>
-          </section>
-        </div>
-      </div>
-    `
+# INTERNATIONAL SHIPPING
+We ship worldwide. Shipping charges for your order will be calculated and displayed at checkout.
+
+- **CANADA**: 7-14 business days
+- **EUROPE / ASIA**: 10-21 business days
+
+**Customs, Duties, and Taxes:** NOUIE is not responsible for any customs and taxes applied to your order. All fees imposed during or after shipping are the responsibility of the customer.
+
+# TRACKING YOUR ORDER
+When your order has shipped, you will receive an email notification from us which will include a tracking number you can use to check its status.`
+
+    await this.renderLegalPage(contentDiv, 'shipping', 'SHIPPING POLICY', defaultBody)
   }
 
-  private renderPrivacy(contentDiv: HTMLElement): void {
-    contentDiv.innerHTML = `
-      <div class="legal-page">
-        <div class="legal-header">
-          <h1>PRIVACY POLICY</h1>
-          <p>LAST UPDATED: JANUARY 2026</p>
-        </div>
-        
-        <div class="legal-content">
-          <section class="legal-section">
-            <h2>OVERVIEW</h2>
-            <p>THIS PRIVACY POLICY DESCRIBES HOW YOUR PERSONAL INFORMATION IS COLLECTED, USED, AND SHARED WHEN YOU VISIT OR MAKE A PURCHASE FROM NOUIE.COM. WE ARE COMMITTED TO PROTECTING YOUR PRIVACY AND ENSURING A SECURE SHOPPING EXPERIENCE.</p>
-          </section>
+  private async renderReturns(contentDiv: HTMLElement): Promise<void> {
+    const defaultBody = `# RETURN POLICY
+We want you to be completely satisfied with your purchase. If you are not satisfied, you may return your item(s) within 14 days of delivery for an exchange or store credit.
 
-          <section class="legal-section">
-            <h2>INFORMATION WE COLLECT</h2>
-            <p>WHEN YOU VISIT THE SITE, WE AUTOMATICALLY COLLECT CERTAIN INFORMATION ABOUT YOUR DEVICE, INCLUDING INFORMATION ABOUT YOUR WEB BROWSER, IP ADDRESS, TIME ZONE, AND SOME OF THE COOKIES THAT ARE INSTALLED ON YOUR DEVICE.</p>
-            <p>ADDITIONALLY, WHEN YOU MAKE A PURCHASE OR ATTEMPT TO MAKE A PURCHASE THROUGH THE SITE, WE COLLECT CERTAIN INFORMATION FROM YOU, INCLUDING YOUR NAME, BILLING ADDRESS, SHIPPING ADDRESS, PAYMENT INFORMATION (INCLUDING CREDIT CARD NUMBERS), EMAIL ADDRESS, AND PHONE NUMBER.</p>
-          </section>
+**PLEASE NOTE:** All returns must be in their original condition—unworn, unwashed, and with all tags attached. Items that do not meet these criteria will be denied.
 
-          <section class="legal-section">
-            <h2>HOW DO WE USE YOUR PERSONAL INFORMATION?</h2>
-            <p>WE USE THE ORDER INFORMATION THAT WE COLLECT GENERALLY TO FULFILL ANY ORDERS PLACED THROUGH THE SITE (INCLUDING PROCESSING YOUR PAYMENT INFORMATION, ARRANGING FOR SHIPPING, AND PROVIDING YOU WITH INVOICES AND/OR ORDER CONFIRMATIONS).</p>
-            <p>ADDITIONALLY, WE USE THIS ORDER INFORMATION TO:</p>
-            <ul class="legal-list">
-              <li>COMMUNICATE WITH YOU;</li>
-              <li>SCREEN OUR ORDERS FOR POTENTIAL RISK OR FRAUD; AND</li>
-              <li>PROVIDE YOU WITH INFORMATION OR ADVERTISING RELATING TO OUR PRODUCTS OR SERVICES.</li>
-            </ul>
-          </section>
+# EXCHANGES
+We offer exchanges for different sizes of the same item, subject to availability. If the desired size is out of stock, a store credit will be issued.
 
-          <section class="legal-section">
-            <h2>DATA RETENTION</h2>
-            <p>WHEN YOU PLACE AN ORDER THROUGH THE SITE, WE WILL MAINTAIN YOUR ORDER INFORMATION FOR OUR RECORDS UNLESS AND UNTIL YOU ASK US TO DELETE THIS INFORMATION.</p>
-          </section>
+# RETURN PROCESS
+1. Email our support desk with your order number and the item(s) you wish to return.
+2. Once approved, you will receive return instructions and address.
+3. Pack your item(s) securely and ship using a trackable method.`
 
-          <section class="legal-section">
-            <h2>CHANGES</h2>
-            <p>WE MAY UPDATE THIS PRIVACY POLICY FROM TIME TO TIME IN ORDER TO REFLECT, FOR EXAMPLE, CHANGES TO OUR PRACTICES OR FOR OTHER OPERATIONAL, LEGAL, OR REGULATORY REASONS.</p>
-          </section>
-
-          <section class="legal-section">
-            <h2>CONTACT US</h2>
-            <p>FOR MORE INFORMATION ABOUT OUR PRIVACY PRACTICES, IF YOU HAVE QUESTIONS, OR IF YOU WOULD LIKE TO MAKE A COMPLAINT, PLEASE CONTACT US BY E-MAIL AT <strong>PRIVACY@NOUIE.COM</strong>.</p>
-          </section>
-        </div>
-      </div>
-    `
+    await this.renderLegalPage(contentDiv, 'returns', 'RETURNS & EXCHANGES', defaultBody)
   }
 
-  private renderTerms(contentDiv: HTMLElement): void {
-    contentDiv.innerHTML = `
-      <div class="legal-page">
-        <div class="legal-header">
-          <h1>TERMS OF SERVICE</h1>
-          <p>LAST UPDATED: MARCH 2026</p>
-        </div>
-        
-        <div class="legal-content">
-          <section class="legal-section">
-            <h2>OVERVIEW</h2>
-            <p>THIS WEBSITE IS OPERATED BY NOUIE. THROUGHOUT THE SITE, THE TERMS "WE", "US" AND "OUR" REFER TO NOUIE. NOUIE OFFERS THIS WEBSITE, INCLUDING ALL INFORMATION, TOOLS AND SERVICES AVAILABLE FROM THIS SITE TO YOU, THE USER, CONDITIONED UPON YOUR ACCEPTANCE OF ALL TERMS, CONDITIONS, POLICIES AND NOTICES STATED HERE.</p>
-          </section>
+  private async renderPrivacy(contentDiv: HTMLElement): Promise<void> {
+    const defaultBody = `# PRIVACY POLICY
+NOUIE values and respects the privacy of our customers. This privacy notice outlines how your personal information is collected, used, and shared when you visit or make a purchase from our store.
 
-          <section class="legal-section">
-            <h2>ONLINE STORE TERMS</h2>
-            <p>BY AGREEING TO THESE TERMS OF SERVICE, YOU REPRESENT THAT YOU ARE AT LEAST THE AGE OF MAJORITY IN YOUR JURISDICTION. YOU MAY NOT USE OUR PRODUCTS FOR ANY ILLEGAL OR UNAUTHORIZED PURPOSE NOR MAY YOU, IN THE USE OF THE SERVICE, VIOLATE ANY LAWS IN YOUR JURISDICTION.</p>
-          </section>
+# INFORMATION WE COLLECT
+When you place an order, we collect certain details including your name, billing address, shipping address, email address, and phone number to fulfill and deliver your transaction.
 
-          <section class="legal-section">
-            <h2>MODIFICATIONS TO SERVICE AND PRICES</h2>
-            <p>PRICES FOR OUR PRODUCTS ARE SUBJECT TO CHANGE WITHOUT NOTICE. WE RESERVE THE RIGHT AT ANY TIME TO MODIFY OR DISCONTINUE THE SERVICE (OR ANY PART OR CONTENT THEREOF) WITHOUT NOTICE.</p>
-          </section>
+# USE OF INFORMATION
+We use your information strictly to process and ship orders, communicate with you regarding order status, and screen orders for potential risk or fraudulent activity.
 
-          <section class="legal-section">
-            <h2>PRODUCTS AND INVENTORY</h2>
-            <p>CERTAIN PRODUCTS MAY BE AVAILABLE EXCLUSIVELY ONLINE IN LIMITED QUANTITIES AND ARE SUBJECT TO RETURN OR EXCHANGE ONLY ACCORDING TO OUR RETURN POLICY. WE RESERVE THE RIGHT TO LIMIT THE QUANTITIES OF ANY PRODUCTS OR SERVICES THAT WE OFFER.</p>
-          </section>
+# DATA SECURITY
+We employ industry-standard encryption and security protocols to safeguard your personal data. We do not store full payment card numbers on our local systems.`
 
-          <section class="legal-section">
-            <h2>ACCURACY OF BILLING AND ORDERS</h2>
-            <p>WE RESERVE THE RIGHT TO REFUSE ANY ORDER YOU PLACE WITH US. IN THE EVENT THAT WE MAKE A CHANGE TO OR CANCEL AN ORDER, WE WILL ATTEMPT TO NOTIFY YOU BY CONTACTING THE EMAIL AND/OR BILLING ADDRESS/PHONE NUMBER PROVIDED AT THE TIME THE ORDER WAS MADE.</p>
-          </section>
-
-          <section class="legal-section">
-            <h2>INTELLECTUAL PROPERTY</h2>
-            <p>ALL CONTENT, GRAPHICS, INDUSTRIAL DESIGNS, LOGOS, AND PRODUCT IMAGERY ARE THE EXCLUSIVE PROPERTY OF NOUIE AND PROTECTED BY COPYRIGHT AND TRADEMARK LAWS.</p>
-          </section>
-
-          <section class="legal-section">
-            <h2>GOVERNING LAW</h2>
-            <p>THESE TERMS OF SERVICE AND ANY SEPARATE AGREEMENTS WHEREBY WE PROVIDE YOU PRODUCTS SHALL BE GOVERNED BY AND CONSTRUED IN ACCORDANCE WITH APPLICABLE LAWS.</p>
-          </section>
-        </div>
-      </div>
-    `
+    await this.renderLegalPage(contentDiv, 'privacy', 'PRIVACY POLICY', defaultBody)
   }
 
-  private renderContact(contentDiv: HTMLElement): void {
+  private async renderTerms(contentDiv: HTMLElement): Promise<void> {
+    const defaultBody = `# TERMS OF SERVICE
+By visiting our site and/or purchasing from NOUIE, you engage in our service and agree to be bound by the following terms and conditions.
+
+# GENERAL CONDITIONS
+We reserve the right to refuse service to anyone for any reason at any time. Prices for our products are subject to change without notice.
+
+# ACCURACY OF BILLING & ORDERS
+You agree to provide current, complete, and accurate purchase and account information for all purchases made at our store.
+
+# INTELLECTUAL PROPERTY
+All graphics, designs, logos, product names, and content appearing on this site are the exclusive property of NOUIE.`
+
+    await this.renderLegalPage(contentDiv, 'terms', 'TERMS OF SERVICE', defaultBody)
+  }
+
+  private async renderContact(contentDiv: HTMLElement): Promise<void> {
+    const business = await settingsService.getBusiness()
+    const supportEmail = business.email_support || 'support@nouie.com'
+    const studioEmail = business.email_studio || 'studio@nouie.com'
+
     contentDiv.innerHTML = `
       <div class="legal-page">
         <div class="legal-header">
@@ -252,13 +167,13 @@ export class Pages {
             <div class="contact-card">
               <h3>CUSTOMER SUPPORT</h3>
               <p>FOR ORDER INQUIRIES, RETURNS, OR GENERAL QUESTIONS:</p>
-              <a href="mailto:SUPPORT@NOUIE.COM" class="contact-link">SUPPORT@NOUIE.COM</a>
+              <a href="mailto:${supportEmail}" class="contact-link">${supportEmail.toUpperCase()}</a>
             </div>
             
             <div class="contact-card">
               <h3>WHOLESALE & STUDIO</h3>
               <p>FOR BUSINESS INQUIRIES OR PARTNERSHIPS:</p>
-              <a href="mailto:STUDIO@NOUIE.COM" class="contact-link">STUDIO@NOUIE.COM</a>
+              <a href="mailto:${studioEmail}" class="contact-link">${studioEmail.toUpperCase()}</a>
             </div>
           </div>
 
@@ -344,7 +259,7 @@ export class Pages {
         break
       case 'archive':
         SEO.updateMeta('ARCHIVE', 'Explore past NOUIE seasons and design evolutions.')
-        this.renderArchive(contentDiv)
+        await this.renderArchive(contentDiv)
         break
       case 'studio':
         SEO.updateMeta('STUDIO', 'Inside the NOUIE design philosophy and technical process.')
@@ -356,7 +271,7 @@ export class Pages {
         break
       case 'checkout':
         SEO.updateMeta('CHECKOUT', 'Secure checkout for your NOUIE technical gear.')
-        this.renderCheckout(contentDiv)
+        await this.renderCheckout(contentDiv)
         break
       case 'admin':
         SEO.updateMeta('ADMIN', 'NOUIE internal management system.')
@@ -394,7 +309,7 @@ export class Pages {
             SEO.injectJSONLD(SEO.generateProductSchema(product))
             this.renderProductDetail(contentDiv, product)
           } else {
-            contentDiv.innerHTML = '<div class="page-header"><h1>PRODUCT NOT FOUND</h1> </div>'
+            contentDiv.innerHTML = '<div class="page-header"><h1>PRODUCT NOT FOUND</h1></div>'
           }
         }
     }
@@ -465,6 +380,7 @@ export class Pages {
   private async renderCollection(contentDiv: HTMLElement): Promise<void> {
     contentDiv.innerHTML = `
       <div class="collection-page">
+        <div class="collection-header-nav" id="collectionNav"></div>
         <div id="collection-grid" class="collection-grid">
           <div class="loading-state">
             LOADING COLLECTION...
@@ -476,7 +392,44 @@ export class Pages {
     const grid = document.getElementById('collection-grid')
     if (!grid) return
 
-    const products = await this.getProducts()
+    const [products, collectionsRes] = await Promise.all([
+      this.getProducts(),
+      supabase.from('collections').select('*').eq('is_active', true).order('sort_order', { ascending: true })
+    ])
+
+    const collections: Collection[] = collectionsRes.data || []
+    const nav = document.getElementById('collectionNav')
+    if (nav && collections.length > 0) {
+      nav.innerHTML = `
+        <div class="collection-tabs">
+          <button class="col-tab active" data-id="all">ALL UNITS</button>
+          ${collections.map(c => `<button class="col-tab" data-id="${c.id}">${c.title}</button>`).join('')}
+        </div>
+      `
+
+      nav.querySelectorAll('.col-tab').forEach(btn => {
+        btn.addEventListener('click', async (e) => {
+          nav.querySelectorAll('.col-tab').forEach(b => b.classList.remove('active'))
+          const target = e.currentTarget as HTMLElement
+          target.classList.add('active')
+          const colId = target.getAttribute('data-id')
+
+          if (colId === 'all') {
+            this.renderCatalogGrid(grid, products)
+          } else {
+            const { data: linked } = await supabase
+              .from('product_collections')
+              .select('product_id')
+              .eq('collection_id', colId)
+
+            const pids = new Set((linked || []).map(l => l.product_id))
+            const filtered = products.filter(p => pids.has(p.id))
+            this.renderCatalogGrid(grid, filtered.length > 0 ? filtered : products)
+          }
+        })
+      })
+    }
+
     this.renderCatalogGrid(grid, products)
   }
 
@@ -487,20 +440,20 @@ export class Pages {
       return `
         <div class="product-card" data-id="${cat.id}">
           <div class="product-card-image">
-            <img src="${this.getImageSrc(cat.images?.[0])}" alt="${cat.name} - ${cat.color} ${cat.material}" loading="lazy" width="800" height="1200">
+            <img src="${this.getImageSrc(cat.images?.[0])}" alt="${cat.name} - ${cat.color || ''} ${cat.material || ''}" loading="lazy" width="800" height="1200">
             <div class="quick-add-icon">
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
- </div>
- </div>
+            </div>
+          </div>
           <div class="product-card-info">
             <h3 class="product-card-title">${cat.name}</h3>
-            <div class="product-card-price">$${cat.price.toFixed(2)} </div>
+            <div class="product-card-price">$${Number(cat.price).toFixed(2)}</div>
             <div class="product-card-swatches">
               <span class="swatch-dot active" style="background: #000;"></span>
               <span class="swatch-dot" style="background: #eee;"></span>
- </div>
- </div>
- </div>
+            </div>
+          </div>
+        </div>
       `
     }).join('')
 
@@ -514,7 +467,6 @@ export class Pages {
   }
 
   private renderProductDetail(contentDiv: HTMLElement, product: Product): void {
-
     contentDiv.innerHTML = `
       <div class="product-detail-page">
         <a href="#collection" class="back-link">← COLLECTION</a>
@@ -522,7 +474,7 @@ export class Pages {
         <div class="product-layout">
           <div class="product-gallery">
             <div class="main-image">
-              <img id="mainProductImg" src="${this.getImageSrc(product.images?.[0])}" alt="${product.name} - ${product.color} ${product.material} Primary View" width="1200" height="1800" fetchpriority="high">
+              <img id="mainProductImg" src="${this.getImageSrc(product.images?.[0])}" alt="${product.name} - ${product.color || ''} ${product.material || ''} Primary View" width="1200" height="1800" fetchpriority="high">
             </div>
             <div class="thumbnail-strip">
               ${(product.images || []).map((img: string, i: number) => `
@@ -535,32 +487,47 @@ export class Pages {
           
           <div class="product-info">
             <h1 class="product-title">${product.name}</h1>
-            <div class="product-price">$${product.price.toFixed(2)} </div>
+            <div class="product-price">$${Number(product.price).toFixed(2)}</div>
             
             <p class="product-description">${product.description}</p>
             
+            <div class="product-specs-box">
+              <div class="spec-item">
+                <span class="spec-label">FABRIC / MATERIAL:</span>
+                <span class="spec-value">${product.material || 'PREMIUM INDUSTRIAL COTTON'}</span>
+              </div>
+              <div class="spec-item">
+                <span class="spec-label">COLORWAY:</span>
+                <span class="spec-value">${product.color || 'STANDARD'}</span>
+              </div>
+              <div class="spec-item">
+                <span class="spec-label">IDENTIFIER / SKU:</span>
+                <span class="spec-value">${product.sku || product.id}</span>
+              </div>
+            </div>
+
             <div class="size-selector">
               <label>SELECT SIZE</label>
               <div class="size-options">
                 ${product.sizes.map((size: string) => {
-        const sizeStock = product.stock_by_size?.[size]
-        const isSoldOut = sizeStock !== undefined && sizeStock <= 0
-        return isSoldOut
-          ? `<button class="size-btn sold-out" data-size="${size}" disabled title="SOLD OUT">${size}</button>`
-          : `<button class="size-btn" data-size="${size}">${size}</button>`
-      }).join('')}
+                  const sizeStock = product.stock_by_size?.[size]
+                  const isSoldOut = sizeStock !== undefined && sizeStock <= 0
+                  return isSoldOut
+                    ? `<button class="size-btn sold-out" data-size="${size}" disabled title="SOLD OUT">${size}</button>`
+                    : `<button class="size-btn" data-size="${size}">${size}</button>`
+                }).join('')}
               </div>
             </div>
             
             <div class="product-actions">
               ${(product.stock_qty || 0) > 0
-        ? `<button class="btn-add-cart" id="addToCartBtn">ADD TO CART</button>
-                 <button class="btn-buy-now" id="buyNowBtn">BUY NOW</button>`
-        : `<button class="btn-add-cart disabled" disabled>OUT OF STOCK</button>`
-      }
+                ? `<button class="btn-add-cart" id="addToCartBtn">ADD TO CART</button>
+                   <button class="btn-buy-now" id="buyNowBtn">BUY NOW</button>`
+                : `<button class="btn-add-cart disabled" disabled>OUT OF STOCK</button>`
+              }
             </div>
             
-            <div class="cart-feedback" id="cartFeedback"> </div>
+            <div class="cart-feedback" id="cartFeedback"></div>
           </div>
         </div>
       </div>
@@ -626,93 +593,122 @@ export class Pages {
     }
   }
 
-  private renderArchive(contentDiv: HTMLElement): void {
+  private async renderArchive(contentDiv: HTMLElement): Promise<void> {
     contentDiv.innerHTML = `
       <div class="archive-page">
-        
-        <div class="archive-grid">
-          ${archiveSeasons.map(season => `
-            <div class="archive-season-card" data-season="${season.id}">
-              <div class="archive-images">
-                ${season.images.map(img => `
-                  <div class="archive-img"><img src="/assets/${img}" alt="NOUIE Archive - ${season.title} - ${season.year}" width="400" height="600" loading="lazy"> </div>
-                `).join('')}
- </div>
-              <div class="archive-content">
-                <div class="archive-year-badge">${season.year} </div>
-                <h2 class="archive-season-title">${season.title}</h2>
-                <p class="archive-description">${season.description}</p>
-                <div class="archive-highlights">
-                  ${season.highlights.map(h => `<span class="highlight-tag">${h}</span>`).join('')}
- </div>
-                <div class="archive-instagram">
-                  <a href="https://www.instagram.com/_nouie/tagged/" target="_blank" rel="noopener">
-                    VIEW ON INSTAGRAM ${season.instagramTag}
-                  </a>
- </div>
- </div>
- </div>
-          `).join('')}
- </div>
-        
-        <div class="archive-footer">
-          <p>FOLLOW <a href="https://www.instagram.com/_nouie/" target="_blank">@_NOUIE</a> FOR LATEST DROPS</p>
- </div>
- </div>
+        <div class="page-header">
+          <h1>ARCHIVE</h1>
+          <p>PAST SEASONS & ARCHIVAL ARTIFACTS</p>
+        </div>
+        <div id="archive-grid" class="archive-grid">
+          <div class="loading-state">LOADING ARCHIVE...</div>
+        </div>
+      </div>
     `
+    const grid = document.getElementById('archive-grid')
+    if (!grid) return
+
+    try {
+      const { data: archivedCols, error } = await supabase
+        .from('collections')
+        .select('*')
+        .eq('is_archived', true)
+        .order('sort_order', { ascending: true })
+
+      if (!error && archivedCols && archivedCols.length > 0) {
+        grid.innerHTML = archivedCols.map((col: Collection) => `
+          <div class="archive-card">
+            <div class="archive-card-image">
+              <img src="${this.getImageSrc(col.cover_image)}" alt="${col.title}" loading="lazy">
+            </div>
+            <div class="archive-card-info">
+              <h2>${col.title}</h2>
+              <p>${col.description || ''}</p>
+            </div>
+          </div>
+        `).join('')
+        return
+      }
+    } catch (err) {
+      console.warn('Could not fetch archived collections:', err)
+    }
+
+    grid.innerHTML = archiveSeasons.map(season => `
+      <div class="archive-card">
+        <div class="archive-card-image">
+          <img src="${this.getImageSrc(season.images[0])}" alt="${season.title}" loading="lazy">
+        </div>
+        <div class="archive-card-info">
+          <h2>${season.title} // ${season.year}</h2>
+          <p>${season.description}</p>
+          <div class="archive-highlights">
+            ${season.highlights.map(h => `<span class="highlight-tag">${h}</span>`).join('')}
+          </div>
+        </div>
+      </div>
+    `).join('')
   }
 
   private renderStudio(contentDiv: HTMLElement): void {
     contentDiv.innerHTML = `
       <div class="studio-page">
+        <div class="page-header">
+          <h1>STUDIO</h1>
+          <p>THE PROCESS BEHIND THE PIECES</p>
+        </div>
         <div class="studio-content">
-          <section>
-            <h2>WE MOVE FORWARD.</h2>
-            <p>NOUIE is a design studio focused on the evolution of streetwear through technical precision and architectural symmetry. Our process is rooted in the intersection of utilitarian function and minimalist clarity.</p>
-         </section>
- </div>
- </div>
+          <section class="studio-section">
+            <h2>PHILOSOPHY</h2>
+            <p>NOUIE operates at the intersection of architectural form and functional streetwear. Every piece begins with raw material selection, focusing on weight, texture, and longevity.</p>
+          </section>
+          <section class="studio-section">
+            <h2>DEVELOPMENT</h2>
+            <p>Our designs undergo rigorous prototyping. From the initial hand-drawn sketch to the final screen-printed textile, each iteration is refined for balance, comfort, and presence.</p>
+          </section>
+          <section class="studio-section">
+            <h2>MATERIALS</h2>
+            <p>Heavyweight cottons, breathable technical knits, and durable hardware. We source materials that age with character, developing unique patina through wear.</p>
+          </section>
+        </div>
+      </div>
     `
   }
 
   private renderLookbook(contentDiv: HTMLElement): void {
-    const looks = [
-      { id: 'LOOK_01', image: 'cat1_1.jpg', product: 'CAT01' },
-      { id: 'LOOK_02', image: 'cat2_1.jpg', product: 'CAT02' },
-      { id: 'LOOK_03', image: 'cat3_1.png', product: 'CAT03' },
-      { id: 'LOOK_04', image: 'cat1_2.jpg', product: 'CAT01' },
-      { id: 'LOOK_05', image: 'cat2_2.jpg', product: 'CAT02' },
-      { id: 'LOOK_06', image: 'cat3_2.png', product: 'CAT03' }
-    ]
-
     contentDiv.innerHTML = `
       <div class="lookbook-page">
+        <div class="page-header">
+          <h1>LOOKBOOK</h1>
+          <p>SEASONAL VISUAL NARRATIVE</p>
+        </div>
         <div class="lookbook-grid">
-          ${looks.map(look => `
-            <div class="lookbook-item" data-product="${look.product}">
-              <div class="lookbook-image">
-                <img src="/assets/${look.image}" alt="NOUIE Lookbook - ${look.id}" width="600" height="900" loading="lazy">
-              </div>
-              <div class="lookbook-info">
-                <span>${look.id}</span>
- </div>
- </div>
-          `).join('')}
- </div>
- </div>
+          <div class="lookbook-item">
+            <div class="lookbook-image">
+              <img src="/assets/cat1_1.jpg" alt="Look 01 - Soldier Thermals" loading="lazy">
+              <div class="lookbook-overlay"></div>
+            </div>
+            <div class="lookbook-caption">LOOK 01 // SOLDIER THERMALS</div>
+          </div>
+          <div class="lookbook-item">
+            <div class="lookbook-image">
+              <img src="/assets/cat2_1.jpg" alt="Look 02 - NOUIE Tee" loading="lazy">
+              <div class="lookbook-overlay"></div>
+            </div>
+            <div class="lookbook-caption">LOOK 02 // NOUIE TEE</div>
+          </div>
+          <div class="lookbook-item">
+            <div class="lookbook-image">
+              <img src="/assets/cat3_1.png" alt="Look 03 - NOUIE Jersey" loading="lazy">
+              <div class="lookbook-overlay"></div>
+            </div>
+            <div class="lookbook-caption">LOOK 03 // NOUIE JERSEY</div>
+          </div>
+        </div>
+      </div>
     `
-
-    // Add click handlers to navigate to product
-    contentDiv.querySelectorAll('.lookbook-item').forEach(item => {
-      item.addEventListener('click', () => {
-        const productId = item.getAttribute('data-product')
-        if (productId) window.location.hash = `#product-${productId}`
-      })
-      ;(item as HTMLElement).style.cursor = 'pointer'
-    })
   }
 
-  private renderCheckout(contentDiv: HTMLElement): void {
+  private async renderCheckout(contentDiv: HTMLElement): Promise<void> {
     const items = cartStore.getItems()
 
     if (items.length === 0) {
@@ -728,23 +724,59 @@ export class Pages {
       return
     }
 
+    const [shippingConf, taxConf] = await Promise.all([
+      settingsService.getShipping(),
+      settingsService.getTax()
+    ])
+
     const subtotal = cartStore.getTotal()
     let shippingMethod: 'standard' | 'express' = 'standard'
+    let appliedDiscount: { code: string; discount_amount: number; type: string; value: number } | null = null
 
     const calcShipping = (method: 'standard' | 'express', sub: number) => {
-      if (method === 'express') return 25.00
-      return sub >= 250 ? 0.00 : 10.00
+      if (method === 'express') return shippingConf.express
+      return sub >= shippingConf.free_threshold ? 0.00 : shippingConf.standard
+    }
+
+    const calcTax = (sub: number) => {
+      if (!taxConf.enabled) return 0.00
+      return Math.round(sub * taxConf.rate * 100) / 100
     }
 
     const renderTotals = () => {
       const shipCost = calcShipping(shippingMethod, subtotal)
-      const finalTotal = subtotal + shipCost
-      const shipText = shippingMethod === 'standard' && subtotal >= 250 ? 'FREE' : `$${shipCost.toFixed(2)}`
+      const taxCost = calcTax(subtotal)
+      const discountAmt = appliedDiscount ? appliedDiscount.discount_amount : 0.00
+      const finalTotal = Math.max(0, subtotal + shipCost + taxCost - discountAmt)
+
+      const isFree = shippingMethod === 'standard' && subtotal >= shippingConf.free_threshold
+      const shipText = isFree ? 'FREE' : `$${shipCost.toFixed(2)}`
 
       const shipEl = document.getElementById('checkoutShippingCost')
       const totalEl = document.getElementById('checkoutFinalTotal')
+      const taxEl = document.getElementById('checkoutTaxRow')
+      const discountEl = document.getElementById('checkoutDiscountRow')
+
       if (shipEl) shipEl.textContent = shipText
       if (totalEl) totalEl.textContent = `$${finalTotal.toFixed(2)} USD`
+
+      if (taxConf.enabled && taxEl) {
+        taxEl.style.display = 'flex'
+        const taxVal = document.getElementById('checkoutTaxCost')
+        if (taxVal) taxVal.textContent = `$${taxCost.toFixed(2)}`
+      } else if (taxEl) {
+        taxEl.style.display = 'none'
+      }
+
+      if (appliedDiscount && discountEl) {
+        discountEl.style.display = 'flex'
+        const codeLabel = document.getElementById('appliedCodeLabel')
+        const discVal = document.getElementById('checkoutDiscountAmount')
+        if (codeLabel) codeLabel.textContent = appliedDiscount.code
+        if (discVal) discVal.textContent = `-$${discountAmt.toFixed(2)}`
+      } else if (discountEl) {
+        discountEl.style.display = 'none'
+      }
     }
 
     contentDiv.innerHTML = `
@@ -780,11 +812,11 @@ export class Pages {
                 <div class="shipping-method-selector">
                   <label class="shipping-option">
                     <input type="radio" name="shippingMethod" value="standard" checked>
-                    <span>STANDARD (5-7 BUSINESS DAYS) — $10.00 (FREE OVER $250)</span>
+                    <span>STANDARD (${shippingConf.standard_days} BUSINESS DAYS) — $${shippingConf.standard.toFixed(2)} (FREE OVER $${shippingConf.free_threshold.toFixed(2)})</span>
                   </label>
                   <label class="shipping-option">
                     <input type="radio" name="shippingMethod" value="express">
-                    <span>EXPRESS (2-3 BUSINESS DAYS) — $25.00</span>
+                    <span>EXPRESS (${shippingConf.express_days} BUSINESS DAYS) — $${shippingConf.express.toFixed(2)}</span>
                   </label>
                 </div>
               </div>
@@ -808,18 +840,34 @@ export class Pages {
               `).join('')}
             </div>
 
+            <div class="discount-box">
+              <div class="discount-input-row">
+                <input type="text" id="discountCodeInput" placeholder="PROMO_CODE" style="text-transform: uppercase;">
+                <button type="button" id="applyDiscountBtn" class="btn-apply-discount">APPLY</button>
+              </div>
+              <div id="discountFeedback" class="discount-feedback"></div>
+            </div>
+
             <div class="order-totals">
               <div class="order-total-row">
                 <span>SUBTOTAL</span>
                 <span>$${subtotal.toFixed(2)}</span>
               </div>
+              <div class="order-total-row" id="checkoutDiscountRow" style="display: none; color: #10b981;">
+                <span>DISCOUNT (<span id="appliedCodeLabel"></span>)</span>
+                <span id="checkoutDiscountAmount">-$0.00</span>
+              </div>
               <div class="order-total-row">
                 <span>SHIPPING</span>
-                <span id="checkoutShippingCost">${shippingMethod === 'standard' && subtotal >= 250 ? 'FREE' : '$10.00'}</span>
+                <span id="checkoutShippingCost">${shippingMethod === 'standard' && subtotal >= shippingConf.free_threshold ? 'FREE' : `$${shippingConf.standard.toFixed(2)}`}</span>
+              </div>
+              <div class="order-total-row" id="checkoutTaxRow" style="${taxConf.enabled ? 'display: flex;' : 'display: none;'}">
+                <span>${taxConf.label} (${(taxConf.rate * 100).toFixed(1)}%)</span>
+                <span id="checkoutTaxCost">$${calcTax(subtotal).toFixed(2)}</span>
               </div>
               <div class="order-total-row total-final">
                 <span>TOTAL</span>
-                <span id="checkoutFinalTotal">$${(subtotal + calcShipping(shippingMethod, subtotal)).toFixed(2)} USD</span>
+                <span id="checkoutFinalTotal">$${(subtotal + calcShipping(shippingMethod, subtotal) + calcTax(subtotal)).toFixed(2)} USD</span>
               </div>
             </div>
 
@@ -841,17 +889,49 @@ export class Pages {
       })
     })
 
+    // Discount code apply handler
+    document.getElementById('applyDiscountBtn')?.addEventListener('click', async () => {
+      const codeInput = document.getElementById('discountCodeInput') as HTMLInputElement
+      const feedback = document.getElementById('discountFeedback') as HTMLElement
+      const code = codeInput.value.trim().toUpperCase()
+
+      if (!code) {
+        feedback.innerHTML = '<span class="warning">ENTER A PROMO CODE</span>'
+        return
+      }
+
+      feedback.innerHTML = '<span class="loading">VALIDATING CODE...</span>'
+
+      try {
+        const { data, error } = await supabase.rpc('validate_discount', {
+          p_code: code,
+          p_subtotal: subtotal
+        })
+
+        if (error || !data || !data.valid) {
+          appliedDiscount = null
+          feedback.innerHTML = `<span class="warning">${data?.message || 'INVALID DISCOUNT CODE'}</span>`
+        } else {
+          appliedDiscount = data
+          feedback.innerHTML = `<span class="success">PROMO CODE APPLIED: -$${Number(data.discount_amount).toFixed(2)}</span>`
+        }
+        renderTotals()
+      } catch (err: any) {
+        feedback.innerHTML = `<span class="warning">VALIDATION ERROR: ${err.message}</span>`
+      }
+    })
+
     document.getElementById('placeOrderBtn')?.addEventListener('click', async () => {
       const form = document.getElementById('checkoutForm') as HTMLFormElement
       if (!form.checkValidity()) {
         form.reportValidity()
         return
       }
-      await this.submitOrder(shippingMethod)
+      await this.submitOrder(shippingMethod, appliedDiscount?.code || null)
     })
   }
 
-  private async submitOrder(shippingMethod: 'standard' | 'express'): Promise<void> {
+  private async submitOrder(shippingMethod: 'standard' | 'express', discountCode: string | null = null): Promise<void> {
     const statusEl = document.getElementById('orderStatus')
     const btnEl = document.getElementById('placeOrderBtn') as HTMLButtonElement
 
@@ -872,7 +952,8 @@ export class Pages {
       p_shipping_address: (document.getElementById('shippingAddress') as HTMLTextAreaElement).value.trim(),
       p_notes: (document.getElementById('orderNotes') as HTMLTextAreaElement).value.trim() || null,
       p_items: items,
-      p_shipping_method: shippingMethod
+      p_shipping_method: shippingMethod,
+      p_discount_code: discountCode
     }
 
     try {
@@ -892,6 +973,14 @@ export class Pages {
           userMessage = 'INVALID ITEM QUANTITY.'
         } else if (userMessage.includes('GWOSE_MANKE')) {
           userMessage = 'PLEASE SELECT A SIZE FOR EVERY ITEM.'
+        } else if (userMessage.includes('RABE_ENVALID')) {
+          userMessage = 'DISCOUNT CODE IS INVALID.'
+        } else if (userMessage.includes('RABE_EKSPIRE')) {
+          userMessage = 'DISCOUNT CODE HAS EXPIRED.'
+        } else if (userMessage.includes('RABE_LIMIT_ATENN')) {
+          userMessage = 'DISCOUNT CODE USAGE LIMIT REACHED.'
+        } else if (userMessage.includes('RABE_MINIMÒM_ENSIFIZAN')) {
+          userMessage = 'ORDER DOES NOT MEET MINIMUM FOR THIS DISCOUNT.'
         }
 
         if (statusEl) {
