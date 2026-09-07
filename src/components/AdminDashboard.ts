@@ -130,7 +130,9 @@ export class AdminDashboard {
         <input type="text" id="orderSearch" placeholder="SEARCH BY ID, CUSTOMER, EMAIL..." class="admin-search-input">
         <select id="orderStatusFilter" class="admin-select-filter">
           <option value="">ALL STATUSES</option>
+          <option value="paid">PAID (CONFIRMED)</option>
           <option value="pending">PENDING</option>
+          <option value="payment_review">PAYMENT REVIEW</option>
           <option value="processing">PROCESSING</option>
           <option value="shipped">SHIPPED</option>
           <option value="delivered">DELIVERED</option>
@@ -192,8 +194,10 @@ export class AdminDashboard {
               ${order.tax_amount ? `<small class="tax-pill">+TAX: $${Number(order.tax_amount).toFixed(2)}</small>` : ''}
             </td>
             <td class="order-status">
-              <select class="status-select" data-id="${order.id}" data-prev="${order.status}">
+              <select class="status-select status-badge-${order.status}" data-id="${order.id}" data-prev="${order.status}">
                 <option value="pending" ${order.status === 'pending' ? 'selected' : ''}>PENDING</option>
+                <option value="paid" ${order.status === 'paid' ? 'selected' : ''}>PAID</option>
+                <option value="payment_review" ${order.status === 'payment_review' ? 'selected' : ''}>PAYMENT REVIEW</option>
                 <option value="processing" ${order.status === 'processing' ? 'selected' : ''}>PROCESSING</option>
                 <option value="shipped" ${order.status === 'shipped' ? 'selected' : ''}>SHIPPED</option>
                 <option value="delivered" ${order.status === 'delivered' ? 'selected' : ''}>DELIVERED</option>
@@ -224,7 +228,7 @@ export class AdminDashboard {
                     })
                 })
 
-                // Status change listeners (with A1 cancel_order restock)
+                // Status change listeners (with A1 cancel_order restock & pending delivery guard)
                 tbody.querySelectorAll('.status-select').forEach(selectEl => {
                     selectEl.addEventListener('change', async (e) => {
                         const target = e.currentTarget as HTMLSelectElement
@@ -232,6 +236,13 @@ export class AdminDashboard {
                         const newStatus = target.value
                         const prevStatus = target.getAttribute('data-prev') || 'pending'
                         const order = allOrders.find((o: any) => o.id.toString() === id)
+
+                        // Sekirite: Bloke chanjman nan processing/shipped/delivered si kòmand lan poko peye
+                        if (prevStatus === 'pending' && ['processing', 'shipped', 'delivered'].includes(newStatus)) {
+                            alert('PA LIVRE — KÒMAND SA A PA PEYE!\n(CANNOT FULFILL UNPAID ORDER. Wait until payment is confirmed by Stripe.)')
+                            target.value = prevStatus
+                            return
+                        }
 
                         if (newStatus === 'cancelled') {
                             const confirmed = confirm(

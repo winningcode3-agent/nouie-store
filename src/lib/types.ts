@@ -36,6 +36,8 @@ export interface CartItem {
     qty: number
 }
 
+export type OrderStatus = 'pending' | 'paid' | 'payment_review' | 'processing' | 'shipped' | 'delivered' | 'cancelled'
+
 export interface Order {
     customer_name: string
     customer_email: string
@@ -47,7 +49,7 @@ export interface Order {
     shipping_method?: 'standard' | 'express'
     shipping_cost?: number
     total: number
-    status: string
+    status: OrderStatus
     tracking_number?: string
     carrier?: string
     stripe_session_id?: string

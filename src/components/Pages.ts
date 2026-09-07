@@ -273,6 +273,12 @@ All graphics, designs, logos, product names, and content appearing on this site 
         SEO.updateMeta('CHECKOUT', 'Secure checkout for your NOUIE technical gear.')
         await this.renderCheckout(contentDiv)
         break
+      case 'order/success':
+        this.renderOrderSuccess(contentDiv)
+        break
+      case 'order/cancel':
+        this.renderOrderCancel(contentDiv)
+        break
       case 'admin':
         SEO.updateMeta('ADMIN', 'NOUIE internal management system.')
         await this.renderAdmin(contentDiv)
@@ -951,7 +957,7 @@ All graphics, designs, logos, product names, and content appearing on this site 
     const statusEl = document.getElementById('orderStatus')
     const btnEl = document.getElementById('placeOrderBtn') as HTMLButtonElement
 
-    if (statusEl) statusEl.innerHTML = '<div class="loading">PROCESSING ORDER SECURELY...</div>'
+    if (statusEl) statusEl.innerHTML = '<div class="loading">CONNECTING TO SECURE CHECKOUT...</div>'
     if (btnEl) btnEl.disabled = true
 
     const items = cartStore.getItems()
@@ -961,6 +967,9 @@ All graphics, designs, logos, product names, and content appearing on this site 
       return
     }
 
+    const previousOrderIdStr = sessionStorage.getItem('nouie_pending_order')
+    const previousOrderId = previousOrderIdStr ? Number(previousOrderIdStr) : null
+
     const payload = {
       p_customer_name: (document.getElementById('customerName') as HTMLInputElement).value.trim(),
       p_customer_email: (document.getElementById('customerEmail') as HTMLInputElement).value.trim(),
@@ -969,15 +978,20 @@ All graphics, designs, logos, product names, and content appearing on this site 
       p_notes: (document.getElementById('orderNotes') as HTMLTextAreaElement).value.trim() || null,
       p_items: items,
       p_shipping_method: shippingMethod,
-      p_discount_code: discountCode
+      p_discount_code: discountCode,
+      previous_order_id: previousOrderId,
     }
 
     try {
-      const { data: orderId, error } = await supabase.rpc('place_order', payload)
+      // Rele Edge Function create-checkout-session ki rele place_order bò sèvè
+      const { data, error } = await supabase.functions.invoke('create-checkout-session', {
+        body: payload,
+      })
 
-      if (error) {
-        console.error('Supabase place_order error:', error.message)
-        let userMessage = error.message
+      if (error || !data || data.error) {
+        const errMsg = error?.message || data?.error || 'CHECKOUT INITIATION FAILED'
+        console.error('Checkout session creation error:', errMsg)
+        let userMessage = errMsg
 
         if (userMessage.includes('PANYEN_VID')) {
           userMessage = 'YOUR CART IS EMPTY.'
@@ -1007,8 +1021,17 @@ All graphics, designs, logos, product names, and content appearing on this site 
         return
       }
 
-      // Success: clear cart and show confirmed view with real order ID
-      this.showOrderSuccess(orderId)
+      // Sove order_id nan sessionStorage pou si kliyan an anile oswa pou paj siksè a
+      if (data.order_id) {
+        sessionStorage.setItem('nouie_pending_order', String(data.order_id))
+      }
+
+      // Redireksyone sou Stripe Checkout Hosted (PA vide panyen an anvan redireksyon!)
+      if (data.url) {
+        window.location.href = data.url
+      } else {
+        throw new Error('NO CHECKOUT REDIRECT URL RETURNED')
+      }
     } catch (err: any) {
       console.error('Order submission network error:', err)
       if (statusEl) {
@@ -1018,18 +1041,38 @@ All graphics, designs, logos, product names, and content appearing on this site 
     }
   }
 
-  private showOrderSuccess(orderId?: string | number): void {
+  private renderOrderSuccess(contentDiv: HTMLElement): void {
+    SEO.updateMeta('ORDER CONFIRMED', 'Thank you for your NOUIE purchase.')
+    // Lè peman an konfime, vide panyen an epi li nimewo kòmand lan
     cartStore.clear()
 
+    const orderId = sessionStorage.getItem('nouie_pending_order')
     const ref = orderId ? `#INV-${orderId}` : `REF_${Date.now().toString(36).toUpperCase()}`
-    const contentDiv = this.getContentDiv()
+    sessionStorage.removeItem('nouie_pending_order')
+
     contentDiv.innerHTML = `
       <div class="order-success">
         <div class="success-icon">✓</div>
-        <h1>ORDER CONFIRMED</h1>
-        <p>Thank you for your order. Your technical units have been reserved in our system.</p>
+        <h1>ORDER CONFIRMED & PAID</h1>
+        <p>Thank you for your purchase. Your payment was verified through Stripe and your technical units are now queued for fulfillment.</p>
         <p class="order-id">ORDER ${ref}</p>
         <a href="#collection" class="btn-continue">CONTINUE BROWSING</a>
+      </div>
+    `
+  }
+
+  private renderOrderCancel(contentDiv: HTMLElement): void {
+    SEO.updateMeta('PAYMENT CANCELLED', 'Your checkout session was cancelled.')
+    // Nou kenbe 'nouie_pending_order' nan sessionStorage pou pwochen tantativ pase previous_order_id
+    contentDiv.innerHTML = `
+      <div class="order-cancelled">
+        <div class="cancel-icon">✕</div>
+        <h1>PAYMENT CANCELLED</h1>
+        <p>Your payment session was cancelled. Your cart is still intact and your items are held for you.</p>
+        <div class="cancel-actions" style="display: flex; gap: 1rem; margin-top: 1.5rem; justify-content: center;">
+          <a href="#checkout" class="btn-continue" style="background: var(--color-gold); color: #000; padding: 0.75rem 1.5rem; font-weight: 700; text-decoration: none;">RETURN TO CHECKOUT</a>
+          <a href="#collection" class="btn-secondary" style="border: 1px solid var(--border-color); color: var(--color-white); padding: 0.75rem 1.5rem; text-decoration: none;">CONTINUE BROWSING</a>
+        </div>
       </div>
     `
   }
