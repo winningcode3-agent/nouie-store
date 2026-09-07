@@ -41,6 +41,17 @@ class CartStore {
         this.notify()
     }
 
+    updateItemQty(id: string, size: string, delta: number): void {
+        const index = this.items.findIndex(item => item.id === id && item.size === size)
+        if (index === -1) return
+        this.items[index].qty += delta
+        if (this.items[index].qty <= 0) {
+            this.items.splice(index, 1)
+        }
+        this.save()
+        this.notify()
+    }
+
     clear(): void {
         this.items = []
         this.save()

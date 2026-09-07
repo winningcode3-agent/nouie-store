@@ -36,6 +36,12 @@ export class AdminDashboard {
             <a href="#admin/products" class="admin-nav-link ${subRoute === 'products' ? 'active' : ''}">
               <span class="nav-icon">📦</span> PRODUCTS
             </a>
+            <a href="#admin/messages" class="admin-nav-link ${subRoute === 'messages' ? 'active' : ''}">
+              <span class="nav-icon">📬</span> MESSAGES
+            </a>
+            <a href="#admin/subscribers" class="admin-nav-link ${subRoute === 'subscribers' ? 'active' : ''}">
+              <span class="nav-icon">👥</span> SUBSCRIBERS
+            </a>
             <a href="#collection" class="admin-nav-link exit">
               <span class="nav-icon">←</span> EXIT_ADMIN
             </a>
@@ -60,12 +66,48 @@ export class AdminDashboard {
             await this.renderOrders(adminMain)
         } else if (subRoute === 'products') {
             await this.renderProducts(adminMain)
+        } else if (subRoute === 'messages') {
+            await this.renderMessages(adminMain)
+        } else if (subRoute === 'subscribers') {
+            await this.renderSubscribers(adminMain)
         } else if (subRoute === 'create-product') {
-            this.renderProductCreate(adminMain)
+            this.renderProductForm(adminMain)
+        } else if (subRoute.startsWith('edit-product-')) {
+            const productId = subRoute.replace('edit-product-', '')
+            await this.renderEditProduct(adminMain, productId)
         } else if (subRoute.startsWith('invoice-')) {
             const orderId = subRoute.replace('invoice-', '')
-            this.renderInvoice(adminMain, orderId)
+            await this.renderInvoice(adminMain, orderId)
         }
+    }
+
+    private async renderEditProduct(container: HTMLElement, productId: string): Promise<void> {
+        container.innerHTML = '<div class="loading-state">LOADING_UNIT...</div>'
+        const { data: product, error } = await supabase
+            .from('products')
+            .select('*')
+            .eq('id', productId)
+            .single()
+
+        if (error || !product) {
+            container.innerHTML = `<h1>PRODUCT NOT FOUND</h1><a href="#admin/products" class="btn-back">← BACK</a>`
+            return
+        }
+
+        this.renderProductForm(container, product as Product)
+    }
+
+    private async uploadProductImages(files: FileList): Promise<string[]> {
+        const urls: string[] = []
+        for (const file of Array.from(files)) {
+            const ext = file.name.split('.').pop()
+            const path = `${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`
+            const { error } = await supabase.storage.from('product-images').upload(path, file)
+            if (error) throw error
+            const { data } = supabase.storage.from('product-images').getPublicUrl(path)
+            urls.push(data.publicUrl)
+        }
+        return urls
     }
 
     private async renderOrders(container: HTMLElement): Promise<void> {
@@ -103,18 +145,14 @@ export class AdminDashboard {
 
         try {
             // Fetch from Supabase
-            const { data: dbOrders, error: _error } = await supabase
+            const { data: dbOrders, error: fetchError } = await supabase
                 .from('orders')
                 .select('*')
                 .order('created_at', { ascending: false })
 
-            // Also get from localStorage
-            const localOrders = JSON.parse(localStorage.getItem('nouie_orders') || '[]')
+            if (fetchError) throw fetchError
 
-            let allOrders = [...localOrders]
-            if (dbOrders) {
-                allOrders = [...dbOrders, ...localOrders]
-            }
+            const allOrders = dbOrders || []
 
             if (allOrders.length === 0) {
                 tbody.innerHTML = '<tr><td colspan="6" class="table-empty">NO_DATA_FOUND_IN_CLUSTER</td></tr>'
@@ -123,13 +161,13 @@ export class AdminDashboard {
 
             tbody.innerHTML = allOrders.map((order: any) => `
         <tr data-id="${order.id}">
-          <td class="order-id">#${order.id.toString().slice(-6).toUpperCase()}</td>
+          <td class="admin-order-id">#${order.id.toString().slice(-6).toUpperCase()}</td>
           <td class="order-customer">
             <div class="customer-name">${order.customer_name}</div>
             <div class="customer-email">${order.customer_email}</div>
           </td>
           <td class="order-date">${new Date(order.created_at || Date.now()).toLocaleDateString()}</td>
-          <td class="order-total">$${order.total}.00</td>
+          <td class="order-total">$${Number(order.total).toFixed(2)}</td>
           <td class="order-status">
             <select class="status-select" data-id="${order.id}">
               <option value="pending" ${order.status === 'pending' ? 'selected' : ''}>PENDING</option>
@@ -138,6 +176,11 @@ export class AdminDashboard {
               <option value="delivered" ${order.status === 'delivered' ? 'selected' : ''}>DELIVERED</option>
               <option value="cancelled" ${order.status === 'cancelled' ? 'selected' : ''}>CANCELLED</option>
             </select>
+            <div class="tracking-cell" data-id="${order.id}">
+              ${order.tracking_number
+        ? `<span class="tracking-info">🚚 ${order.carrier || ''} ${order.tracking_number}</span>`
+        : ''}
+            </div>
           </td>
           <td class="order-actions">
             <button class="btn-invoice" data-id="${order.id}">GEN_INVOICE</button>
@@ -157,18 +200,26 @@ export class AdminDashboard {
             // Add status change listeners
             tbody.querySelectorAll('.status-select').forEach(select => {
                 select.addEventListener('change', async (e) => {
-                    const id = (e.currentTarget as HTMLSelectElement).getAttribute('data-id')
-                    const status = (e.currentTarget as HTMLSelectElement).value
+                    const target = e.currentTarget as HTMLSelectElement
+                    const id = target.getAttribute('data-id')
+                    const status = target.value
+                    const order = allOrders.find((o: any) => o.id.toString() === id)
 
-                    // Update in Supabase
-                    const { error } = await supabase.from('orders').update({ status }).eq('id', id)
-
-                    if (error) {
-                        // Update in localStorage if Supabase fails
-                        const locals = JSON.parse(localStorage.getItem('nouie_orders') || '[]')
-                        const updated = locals.map((o: any) => o.id.toString() === id ? { ...o, status } : o)
-                        localStorage.setItem('nouie_orders', JSON.stringify(updated))
+                    if (status === 'shipped' && !order?.tracking_number) {
+                        this.promptTrackingInfo(target, id!, status)
+                        return
                     }
+
+                    await this.saveOrderStatus(id!, { status })
+                })
+            })
+
+            tbody.querySelectorAll('.tracking-info').forEach(el => {
+                el.addEventListener('click', (e) => {
+                    const cell = (e.currentTarget as HTMLElement).closest('.tracking-cell') as HTMLElement
+                    const id = cell.getAttribute('data-id')
+                    const select = tbody.querySelector(`.status-select[data-id="${id}"]`) as HTMLSelectElement
+                    if (select) this.promptTrackingInfo(select, id!, 'shipped')
                 })
             })
 
@@ -176,6 +227,61 @@ export class AdminDashboard {
             console.error('Admin order fetch error:', err)
             tbody.innerHTML = '<tr><td colspan="6" class="table-error">LINK_FAILURE: DATASTORE_UNREACHABLE</td></tr>'
         }
+    }
+
+    private async saveOrderStatus(id: string, fields: { status?: string, tracking_number?: string, carrier?: string }): Promise<void> {
+        const { error } = await supabase.from('orders').update(fields).eq('id', id)
+
+        if (error) {
+            console.error('Failed to update order status:', error)
+            alert(`UPDATE FAILED: ${error.message}`)
+        }
+    }
+
+    private promptTrackingInfo(selectEl: HTMLSelectElement, orderId: string, status: string): void {
+        const cell = selectEl.closest('.order-status') as HTMLElement
+        const previousStatus = selectEl.dataset.previousStatus || selectEl.value
+
+        const form = document.createElement('div')
+        form.className = 'tracking-form'
+        form.innerHTML = `
+      <select class="tracking-carrier">
+        <option value="UPS">UPS</option>
+        <option value="FedEx">FedEx</option>
+        <option value="DHL">DHL</option>
+        <option value="USPS">USPS</option>
+      </select>
+      <input type="text" class="tracking-number-input" placeholder="TRACKING_NUMBER">
+      <button class="btn-tracking-save">SAVE</button>
+      <button class="btn-tracking-cancel">CANCEL</button>
+    `
+        cell.appendChild(form)
+        selectEl.disabled = true
+
+        form.querySelector('.btn-tracking-save')?.addEventListener('click', async () => {
+            const carrier = (form.querySelector('.tracking-carrier') as HTMLSelectElement).value
+            const tracking_number = (form.querySelector('.tracking-number-input') as HTMLInputElement).value.trim()
+
+            if (!tracking_number) {
+                alert('ENTER A TRACKING NUMBER')
+                return
+            }
+
+            await this.saveOrderStatus(orderId, { status, tracking_number, carrier })
+
+            const trackingCell = cell.parentElement?.querySelector('.tracking-cell')
+            if (trackingCell) trackingCell.innerHTML = `<span class="tracking-info">🚚 ${carrier} ${tracking_number}</span>`
+
+            form.remove()
+            selectEl.disabled = false
+            selectEl.dataset.previousStatus = status
+        })
+
+        form.querySelector('.btn-tracking-cancel')?.addEventListener('click', () => {
+            selectEl.value = previousStatus
+            form.remove()
+            selectEl.disabled = false
+        })
     }
 
     private async renderProducts(container: HTMLElement): Promise<void> {
@@ -236,6 +342,7 @@ export class AdminDashboard {
         </td>
         <td>
           <button class="btn-save-product" data-id="${product.id}">SAVE</button>
+          <a href="#admin/edit-product-${product.id}" class="btn-edit-product">EDIT</a>
         </td>
       </tr>
     `).join('')
@@ -273,92 +380,253 @@ export class AdminDashboard {
         })
     }
 
-    private renderProductCreate(container: HTMLElement): void {
+    private async renderMessages(container: HTMLElement): Promise<void> {
         container.innerHTML = `
       <header class="admin-header">
-        <h1>CREATE_NEW_UNIT</h1>
+        <h1>SUPPORT_MESSAGES</h1>
+      </header>
+      <div class="admin-table-container">
+        <table class="admin-table">
+          <thead>
+            <tr>
+              <th>DATE</th>
+              <th>NAME</th>
+              <th>EMAIL</th>
+              <th>SUBJECT</th>
+              <th>MESSAGE</th>
+              <th>ACTIONS</th>
+            </tr>
+          </thead>
+          <tbody id="messagesTableBody">
+            <tr><td colspan="6" class="table-loading">LOADING_MESSAGES...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    `
+
+        const tbody = document.getElementById('messagesTableBody')
+        if (!tbody) return
+
+        const { data: messages, error } = await supabase
+            .from('contact_messages')
+            .select('*')
+            .order('created_at', { ascending: false })
+
+        if (error || !messages || messages.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="6" class="table-empty">NO_MESSAGES_FOUND</td></tr>'
+            return
+        }
+
+        tbody.innerHTML = messages.map((msg: any) => `
+      <tr>
+        <td>${new Date(msg.created_at).toLocaleDateString()}</td>
+        <td>${msg.name}</td>
+        <td>${msg.email}</td>
+        <td>${msg.subject || '—'}</td>
+        <td class="message-cell">${msg.message}</td>
+        <td><a href="mailto:${msg.email}" class="btn-view-details">REPLY</a></td>
+      </tr>
+    `).join('')
+    }
+
+    private async renderSubscribers(container: HTMLElement): Promise<void> {
+        container.innerHTML = `
+      <header class="admin-header">
+        <h1>NEWSLETTER_SUBSCRIBERS</h1>
+        <div class="admin-header-actions">
+          <button class="btn-refresh" id="exportCsvBtn">EXPORT_CSV</button>
+        </div>
+      </header>
+      <div class="admin-table-container">
+        <table class="admin-table">
+          <thead>
+            <tr>
+              <th>EMAIL</th>
+              <th>SUBSCRIBED</th>
+            </tr>
+          </thead>
+          <tbody id="subscribersTableBody">
+            <tr><td colspan="2" class="table-loading">LOADING_SUBSCRIBERS...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    `
+
+        const tbody = document.getElementById('subscribersTableBody')
+        if (!tbody) return
+
+        const { data: subscribers, error } = await supabase
+            .from('newsletter_subscribers')
+            .select('*')
+            .order('created_at', { ascending: false })
+
+        if (error || !subscribers || subscribers.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="2" class="table-empty">NO_SUBSCRIBERS_FOUND</td></tr>'
+            document.getElementById('exportCsvBtn')?.setAttribute('disabled', 'true')
+            return
+        }
+
+        tbody.innerHTML = subscribers.map((sub: any) => `
+      <tr>
+        <td>${sub.email}</td>
+        <td>${new Date(sub.created_at).toLocaleDateString()}</td>
+      </tr>
+    `).join('')
+
+        document.getElementById('exportCsvBtn')?.addEventListener('click', () => {
+            const rows = [['email', 'subscribed_at'], ...subscribers.map((s: any) => [s.email, s.created_at])]
+            const csv = rows.map(r => r.map((cell: string) => `"${String(cell).replace(/"/g, '""')}"`).join(',')).join('\n')
+            const blob = new Blob([csv], { type: 'text/csv' })
+            const url = URL.createObjectURL(blob)
+            const a = document.createElement('a')
+            a.href = url
+            a.download = `nouie-subscribers-${new Date().toISOString().slice(0, 10)}.csv`
+            a.click()
+            URL.revokeObjectURL(url)
+        })
+    }
+
+    private readonly SIZE_OPTIONS = ['S', 'M', 'L', 'XL', 'XXL']
+
+    private renderProductForm(container: HTMLElement, existing?: Product): void {
+        const isEdit = !!existing
+        const stockBySize = existing?.stock_by_size || {}
+
+        container.innerHTML = `
+      <header class="admin-header">
+        <h1>${isEdit ? `EDIT_UNIT — ${existing!.id}` : 'CREATE_NEW_UNIT'}</h1>
         <a href="#admin/products" class="btn-back">← BACK</a>
       </header>
       <div class="admin-form-container">
-        <form id="createProductForm" class="admin-form">
+        <form id="productForm" class="admin-form">
           <div class="form-grid">
             <div class="form-group">
               <label>UNIT_ID (e.g. CAT04)</label>
-              <input type="text" name="id" required placeholder="CAT00">
+              <input type="text" name="id" required placeholder="CAT00" value="${existing?.id || ''}" ${isEdit ? 'readonly' : ''}>
             </div>
             <div class="form-group">
               <label>PRODUCT NAME</label>
-              <input type="text" name="name" required placeholder="PRODUCT_NAME">
+              <input type="text" name="name" required placeholder="PRODUCT_NAME" value="${existing?.name || ''}">
             </div>
             <div class="form-group">
               <label>SEASON</label>
-              <input type="text" name="season" required placeholder="SS26_DROP">
+              <input type="text" name="season" required placeholder="SS26_DROP" value="${existing?.season || ''}">
             </div>
             <div class="form-group">
               <label>PRICE (USD)</label>
-              <input type="number" name="price" required placeholder="000">
+              <input type="number" step="0.01" name="price" required placeholder="0.00" value="${existing?.price ?? ''}">
             </div>
           </div>
           <div class="form-group">
             <label>SKU</label>
-            <input type="text" name="sku" required placeholder="NOUIE-SS26-XX-01">
+            <input type="text" name="sku" required placeholder="NOUIE-SS26-XX-01" value="${existing?.sku || ''}">
           </div>
           <div class="form-group">
             <label>COLOR</label>
-            <input type="text" name="color" required placeholder="BLACK">
+            <input type="text" name="color" required placeholder="BLACK" value="${existing?.color || ''}">
           </div>
           <div class="form-group">
             <label>DESCRIPTION</label>
-            <textarea name="description" required placeholder="Unit technical specifications..."></textarea>
+            <textarea name="description" required placeholder="Unit technical specifications...">${existing?.description || ''}</textarea>
           </div>
           <div class="form-group">
-            <label>IMAGE_FILENAMES (comma separated)</label>
-            <input type="text" name="images" required placeholder="cat1_1.jpg, cat1_2.jpg">
+            <label>SIZES (comma separated)</label>
+            <input type="text" name="sizes" required placeholder="S, M, L, XL" value="${existing?.sizes?.join(', ') || ''}">
           </div>
-          <button type="submit" class="btn-submit-form">INITIALIZE_UNIT</button>
+          <div class="form-group">
+            <label>STOCK BY SIZE</label>
+            <div class="stock-by-size-grid">
+              ${this.SIZE_OPTIONS.map(size => `
+                <div class="stock-size-input">
+                  <label>${size}</label>
+                  <input type="number" min="0" name="stock_${size}" value="${stockBySize[size] ?? 0}">
+                </div>
+              `).join('')}
+            </div>
+          </div>
+          <div class="form-group">
+            <label>PRODUCT IMAGES</label>
+            <input type="file" name="imageFiles" accept="image/*" multiple>
+            ${isEdit && existing!.images?.length
+                ? `<div class="current-images-note">Current: ${existing!.images.length} image(s). Leave empty to keep them.</div>`
+                : ''}
+          </div>
+          <button type="submit" class="btn-submit-form">${isEdit ? 'SAVE_CHANGES' : 'INITIALIZE_UNIT'}</button>
+          <div id="formFeedback"></div>
         </form>
       </div>
     `
 
-        document.getElementById('createProductForm')?.addEventListener('submit', async (e) => {
+        document.getElementById('productForm')?.addEventListener('submit', async (e) => {
             e.preventDefault()
-            const formData = new FormData(e.target as HTMLFormElement)
+            const form = e.target as HTMLFormElement
+            const formData = new FormData(form)
+            const feedback = document.getElementById('formFeedback')
+            const submitBtn = form.querySelector('.btn-submit-form') as HTMLButtonElement
 
-            const newProduct = {
+            submitBtn.disabled = true
+            if (feedback) feedback.innerHTML = '<span class="loading">SAVING...</span>'
+
+            const stock_by_size: Record<string, number> = {}
+            for (const size of this.SIZE_OPTIONS) {
+                stock_by_size[size] = parseInt(formData.get(`stock_${size}`) as string) || 0
+            }
+            const stock_qty = Object.values(stock_by_size).reduce((sum, n) => sum + n, 0)
+
+            let images = existing?.images || []
+            const fileInput = form.querySelector('input[name="imageFiles"]') as HTMLInputElement
+            if (fileInput.files && fileInput.files.length > 0) {
+                try {
+                    images = await this.uploadProductImages(fileInput.files)
+                } catch (uploadErr: any) {
+                    if (feedback) feedback.innerHTML = `<span class="error">IMAGE UPLOAD FAILED: ${uploadErr.message}</span>`
+                    submitBtn.disabled = false
+                    return
+                }
+            }
+
+            const productData = {
                 id: formData.get('id') as string,
                 name: formData.get('name') as string,
                 season: formData.get('season') as string,
-                price: parseInt(formData.get('price') as string),
+                price: parseFloat(formData.get('price') as string),
                 description: formData.get('description') as string,
-                sizes: ['S', 'M', 'L', 'XL'],
-                images: (formData.get('images') as string).split(',').map(s => s.trim()),
-                stock_qty: 10,
-                is_active: true,
+                sizes: (formData.get('sizes') as string).split(',').map(s => s.trim()).filter(Boolean),
+                images,
+                stock_qty,
+                stock_by_size,
+                is_active: existing?.is_active ?? true,
                 sku: formData.get('sku') as string,
                 brand: 'NOUIE',
                 color: formData.get('color') as string
             }
 
-            const { error } = await supabase.from('products').insert(newProduct)
+            const { error } = isEdit
+                ? await supabase.from('products').update(productData).eq('id', existing!.id)
+                : await supabase.from('products').insert(productData)
 
             if (error) {
-                alert(`ERROR: ${error.message}`)
+                if (feedback) feedback.innerHTML = `<span class="error">ERROR: ${error.message}</span>`
+                submitBtn.disabled = false
             } else {
-                alert(`PRODUCT ${newProduct.id} INITIALIZED IN SYSTEM`)
+                if (feedback) feedback.innerHTML = '<span class="success">SAVED</span>'
                 window.location.hash = '#admin/products'
             }
         })
     }
 
-    private renderInvoice(container: HTMLElement, orderId: string): void {
-        // Try to find the order
-        const localOrders = JSON.parse(localStorage.getItem('nouie_orders') || '[]')
-        const order = localOrders.find((o: any) => o.id.toString() === orderId)
+    private async renderInvoice(container: HTMLElement, orderId: string): Promise<void> {
+        const { data: dbOrder, error } = await supabase.from('orders').select('*').eq('id', orderId).maybeSingle()
 
-        if (!order) {
-            container.innerHTML = `<h1>ORDER NOT FOUND</h1><a href="#admin/orders">BACK</a>`
+        if (error || !dbOrder) {
+            container.innerHTML = `<h1>ORDER NOT FOUND</h1><a href="#admin/orders" class="btn-back">← BACK</a>`
             return
         }
+
+        const order = dbOrder
+        const subtotal = Number(order.subtotal ?? (Number(order.total) - Number(order.shipping_cost ?? 10.00)))
+        const shippingCost = Number(order.shipping_cost ?? (Number(order.total) - subtotal))
+        const shippingMethod = (order.shipping_method || 'STANDARD').toUpperCase()
 
         container.innerHTML = `
       <header class="admin-header">
@@ -372,8 +640,9 @@ export class AdminDashboard {
             <span class="brand-type">INDUSTRIAL DESIGN UNIT</span>
           </div>
           <div class="invoice-meta">
-            <div>REF: INV_${orderId.slice(-6).toUpperCase()}</div>
+            <div>REF: INV_${orderId.toString().slice(-6).toUpperCase()}</div>
             <div>DATE: ${new Date(order.created_at).toLocaleDateString()}</div>
+            ${order.tracking_number ? `<div>TRACKING: ${order.carrier || ''} ${order.tracking_number}</div>` : ''}
           </div>
         </div>
         
@@ -406,19 +675,23 @@ export class AdminDashboard {
               <tr>
                 <td>${item.name} (${item.size})</td>
                 <td>${item.qty}</td>
-                <td>$${item.price}</td>
-                <td>$${item.price * item.qty}</td>
+                <td>$${Number(item.price).toFixed(2)}</td>
+                <td>$${(item.price * item.qty).toFixed(2)}</td>
               </tr>
             `).join('')}
           </tbody>
           <tfoot>
             <tr>
               <td colspan="3">SUBTOTAL</td>
-              <td>$${order.total}.00</td>
+              <td>$${subtotal.toFixed(2)}</td>
+            </tr>
+            <tr>
+              <td colspan="3">SHIPPING (${shippingMethod})</td>
+              <td>$${shippingCost.toFixed(2)}</td>
             </tr>
             <tr class="final-total">
               <td colspan="3">TOTAL AMOUNT PAID</td>
-              <td>$${order.total}.00 USD</td>
+              <td>$${Number(order.total).toFixed(2)} USD</td>
             </tr>
           </tfoot>
         </table>

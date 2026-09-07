@@ -1,6 +1,7 @@
 // UI Component - Header, Menu Drawer, Cart Drawer
 
 import { cartStore } from '../lib/store'
+import { supabase } from '../lib/supabase'
 
 export class UI {
   private cartDrawerOpen = false
@@ -37,9 +38,6 @@ export class UI {
       </a>
       
       <div class="header-right">
-        <button class="search-btn">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
-        </button>
         <button class="cart-btn" id="cartBtn">
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z"></path><line x1="3" y1="6" x2="21" y2="6"></line><path d="M16 10a4 4 0 0 1-8 0"></path></svg>
           <span id="cartCount" class="cart-count">${cartStore.getTotalQuantity()}</span>
@@ -87,6 +85,7 @@ export class UI {
             <a href="#shipping" class="footer-link">Shipping</a>
             <a href="#returns" class="footer-link">Returns</a>
             <a href="#privacy" class="footer-link">Privacy Policy</a>
+            <a href="#terms" class="footer-link">Terms of Service</a>
             <a href="#contact" class="footer-link">Contact</a>
           </div>
         </div>
@@ -158,8 +157,40 @@ export class UI {
     `
     document.body.appendChild(menuDrawer)
 
+    // Cookie consent banner
+    this.renderCookieBanner()
+
     // Event Listeners
     this.addEventListeners(cartDrawer, menuDrawer)
+  }
+
+  private renderCookieBanner(): void {
+    if (localStorage.getItem('nouie_cookie_consent')) return
+
+    const banner = document.createElement('div')
+    banner.className = 'cookie-banner'
+    banner.id = 'cookieBanner'
+    banner.innerHTML = `
+      <div class="cookie-text">
+        <span>WE USE ESSENTIAL COOKIES AND LOCAL STORAGE TO MAINTAIN YOUR CART AND DELIVER TECHNICAL PRECISION.</span>
+        <a href="#privacy" class="cookie-policy-link">LEARN MORE</a>
+      </div>
+      <div class="cookie-actions">
+        <button class="btn-cookie-decline" id="cookieDecline">DECLINE</button>
+        <button class="btn-cookie-accept" id="cookieAccept">ACCEPT</button>
+      </div>
+    `
+    document.body.appendChild(banner)
+
+    document.getElementById('cookieAccept')?.addEventListener('click', () => {
+      localStorage.setItem('nouie_cookie_consent', 'accepted')
+      banner.remove()
+    })
+
+    document.getElementById('cookieDecline')?.addEventListener('click', () => {
+      localStorage.setItem('nouie_cookie_consent', 'declined')
+      banner.remove()
+    })
   }
 
   private addEventListeners(cartDrawer: HTMLElement, menuDrawer: HTMLElement): void {
@@ -200,6 +231,32 @@ export class UI {
         this.toggleMenu(false)
         this.onNavigate(hash)
       })
+    })
+
+    // Newsletter form
+    document.querySelector('.newsletter-form')?.addEventListener('submit', async (e) => {
+      e.preventDefault()
+      const form = e.target as HTMLFormElement
+      const input = form.querySelector('.newsletter-input') as HTMLInputElement
+      const email = input.value.trim()
+      if (!email) return
+
+      const submitBtn = form.querySelector('.btn-newsletter-submit') as HTMLButtonElement
+      submitBtn.disabled = true
+      submitBtn.textContent = '...'
+
+      const { error } = await supabase.from('newsletter_subscribers').insert({ email })
+
+      if (error && error.code !== '23505') {
+        console.error('Newsletter signup error:', error)
+        submitBtn.textContent = 'ERROR'
+        setTimeout(() => { submitBtn.textContent = 'JOIN'; submitBtn.disabled = false }, 2000)
+        return
+      }
+
+      submitBtn.textContent = 'JOINED'
+      input.value = ''
+      setTimeout(() => { submitBtn.textContent = 'JOIN'; submitBtn.disabled = false }, 2000)
     })
 
     // Close on outside click
@@ -265,14 +322,19 @@ export class UI {
       <div class="cart-item">
         <div class="cart-item-info">
           <div class="cart-item-name">${item.name}</div>
-          <div class="cart-item-details">SIZE: ${item.size} / QTY: ${item.qty}</div>
+          <div class="cart-item-details">SIZE: ${item.size}</div>
+          <div class="cart-item-qty">
+            <button class="qty-btn qty-decrease" data-id="${item.id}" data-size="${item.size}">&minus;</button>
+            <span class="qty-value">${item.qty}</span>
+            <button class="qty-btn qty-increase" data-id="${item.id}" data-size="${item.size}">+</button>
+          </div>
         </div>
-        <div class="cart-item-price">$${item.price * item.qty}.00</div>
+        <div class="cart-item-price">$${(item.price * item.qty).toFixed(2)}</div>
         <button class="cart-item-remove" data-index="${index}">&times;</button>
       </div>
     `).join('')
 
-    if (cartTotalEl) cartTotalEl.textContent = `$${total}.00 USD`
+    if (cartTotalEl) cartTotalEl.textContent = `$${total.toFixed(2)} USD`
     if (cartCountEl) cartCountEl.textContent = String(totalQty)
 
     // Add remove handlers
@@ -280,6 +342,20 @@ export class UI {
       btn.addEventListener('click', (e) => {
         const index = parseInt((e.target as HTMLElement).getAttribute('data-index') || '0')
         cartStore.removeItem(index)
+      })
+    })
+
+    // Add quantity handlers
+    cartItemsEl.querySelectorAll('.qty-increase').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        const target = e.currentTarget as HTMLElement
+        cartStore.updateItemQty(target.getAttribute('data-id') || '', target.getAttribute('data-size') || '', 1)
+      })
+    })
+    cartItemsEl.querySelectorAll('.qty-decrease').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        const target = e.currentTarget as HTMLElement
+        cartStore.updateItemQty(target.getAttribute('data-id') || '', target.getAttribute('data-size') || '', -1)
       })
     })
   }

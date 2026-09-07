@@ -43,8 +43,8 @@ export class Auth {
         const { session } = await this.getSession()
         if (!session || !session.user) return false
 
-        // Whitelist for testing. In production, use database roles or app_metadata.
-        const adminEmails = ['test@test.com', 'admin@nouie.com']
+        // Whitelist. Dwe matche règ RLS yo nan Supabase (products/orders policies).
+        const adminEmails = ['admin@nouie.com']
         return adminEmails.includes(session.user.email || '')
     }
 }

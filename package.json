@@ -14,10 +14,6 @@
     "vite": "^7.2.4"
   },
   "dependencies": {
-    "@supabase/supabase-js": "^2.91.1",
-    "@types/three": "^0.182.0",
-    "postprocessing": "^6.38.2",
-    "three": "^0.182.0",
-    "three-stdlib": "^2.36.1"
+    "@supabase/supabase-js": "^2.91.1"
   }
 }

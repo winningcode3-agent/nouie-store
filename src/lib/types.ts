@@ -9,6 +9,7 @@ export interface Product {
     sizes: string[]
     images: string[]
     stock_qty?: number
+    stock_by_size?: Record<string, number>
     is_active?: boolean
     sku: string
     brand: string
@@ -42,8 +43,15 @@ export interface Order {
     shipping_address: string
     notes?: string
     items: CartItem[]
+    subtotal?: number
+    shipping_method?: 'standard' | 'express'
+    shipping_cost?: number
     total: number
     status: string
+    tracking_number?: string
+    carrier?: string
+    stripe_session_id?: string
+    paid_at?: string
     id?: string | number
     created_at?: string
 }
