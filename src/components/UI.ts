@@ -184,10 +184,19 @@ export class UI {
     // dènye ranje a epi li vale klik sou lyen yo (INSTAGRAM).
     document.body.classList.add('has-cookie-banner')
 
+    // Wotè banyè a chanje ak lajè ekran an (tèks la vlope sou telefòn), donk
+    // nou mezire l olye nou devine yon valè fiks.
+    const syncHeight = () =>
+      document.body.style.setProperty('--cookie-banner-h', `${banner.offsetHeight}px`)
+    syncHeight()
+    window.addEventListener('resize', syncHeight)
+
     const dismiss = (choice: 'accepted' | 'declined') => {
       localStorage.setItem('nouie_cookie_consent', choice)
       banner.remove()
+      window.removeEventListener('resize', syncHeight)
       document.body.classList.remove('has-cookie-banner')
+      document.body.style.removeProperty('--cookie-banner-h')
     }
 
     document.getElementById('cookieAccept')?.addEventListener('click', () => dismiss('accepted'))

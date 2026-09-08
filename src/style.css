@@ -3017,7 +3017,7 @@ input:checked+.slider:before {
    se sa ki t ap vale klik sou lyen INSTAGRAM nan. Nou lage plas anba pou
    pye paj la ka respire toutotan banyè a la. */
 body.has-cookie-banner .footer {
-  padding-bottom: 160px;
+  padding-bottom: calc(var(--cookie-banner-h, 160px) + 24px);
 }
 
 .cookie-text {
