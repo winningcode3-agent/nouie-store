@@ -2,6 +2,7 @@
 
 import { cartStore } from '../lib/store'
 import { supabase } from '../lib/supabase'
+import { settingsService } from '../lib/settings'
 
 export class UI {
   private cartDrawerOpen = false
@@ -158,8 +159,39 @@ export class UI {
     // Cookie consent banner
     this.renderCookieBanner()
 
+    // Anons global la (admin -> STORE MODE & ANNOUNCEMENTS)
+    void this.renderAnnouncement()
+
     // Event Listeners
     this.addEventListeners(cartDrawer, menuDrawer)
+  }
+
+  // Tèks Franckley tape nan admin nan. Jiska kounye a reglaj la te egziste
+  // nan panèl la men okenn kòd sou vitrin nan pa t li l — li pa t fè anyen.
+  private async renderAnnouncement(): Promise<void> {
+    let text = ''
+    try {
+      const store = await settingsService.getStoreGeneral()
+      text = (store.announcement || '').trim()
+    } catch (err) {
+      console.warn('Could not load announcement:', err)
+      return
+    }
+    if (!text) return
+
+    document.getElementById('announcementBar')?.remove()
+    const bar = document.createElement('div')
+    bar.className = 'announcement-bar'
+    bar.id = 'announcementBar'
+    bar.textContent = text          // textContent: tèks admin pa ka enjekte HTML
+    document.body.prepend(bar)
+
+    // Menm apwòch ak banyè cookie a: nou mezire wotè a olye nou devine, paske
+    // tèks la vlope sou telefòn epi antèt la dwe desann egzakteman sa ki fòk.
+    const sync = () => document.body.style.setProperty('--announcement-h', `${bar.offsetHeight}px`)
+    sync()
+    window.addEventListener('resize', sync)
+    document.body.classList.add('has-announcement')
   }
 
   private renderCookieBanner(): void {

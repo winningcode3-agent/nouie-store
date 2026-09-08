@@ -3887,3 +3887,36 @@ body.has-cookie-banner .footer {
     gap: 12px;
   }
 }
+
+/* ============================================
+   Bann anons global (admin → STORE MODE & ANNOUNCEMENTS)
+   ============================================ */
+.announcement-bar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 10002;
+  background: var(--accent-red);
+  color: #fff;
+  text-align: center;
+  padding: 9px 16px;
+  font-size: 0.68rem;
+  font-weight: 600;
+  letter-spacing: 0.18em;
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+}
+
+/* Antèt la fikse sou top:0, donk li dwe desann anba bann nan. */
+body.has-announcement .header {
+  top: var(--announcement-h, 36px);
+}
+
+body.has-announcement .page-container {
+  padding-top: calc(80px + var(--announcement-h, 36px));
+}
+
+body.has-announcement .page-container.page-home {
+  padding-top: calc(80px + var(--announcement-h, 36px));
+}
