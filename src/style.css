@@ -3907,3 +3907,10 @@ input:checked+.slider:before {
     gap: 0.75rem;
   }
 }
+
+/* Mak build la: vizib men diskrè — li sèvi pou konnen ki vèsyon yon aparèy genyen. */
+.build-id {
+  opacity: 0.35;
+  font-size: 0.85em;
+  letter-spacing: 0.1em;
+}

@@ -101,7 +101,7 @@ export class UI {
       </div>
       
       <div class="footer-bottom">
-        <div class="copyright">© ${new Date().getFullYear()} NOUIE. ALL RIGHTS RESERVED.</div>
+        <div class="copyright">© ${new Date().getFullYear()} NOUIE. ALL RIGHTS RESERVED. <span class="build-id">${__NOUIE_BUILD__}</span></div>
         <div class="footer-social">
           <a href="https://www.instagram.com/_nouie/" target="_blank" rel="noopener noreferrer" class="footer-link">INSTAGRAM</a>
         </div>
