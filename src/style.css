@@ -2954,8 +2954,26 @@ input:checked+.slider:before {
 }
 
 .shipping-option input[type="radio"] {
-  accent-color: #fff;
+  /* Te #fff — envizib sou fon blan an: chwa ki seleksyone a pa t gen wonn ditou. */
+  accent-color: var(--accent-red);
+  width: 18px;
+  height: 18px;
+  flex: 0 0 auto;
   cursor: pointer;
+}
+
+/* Chwa ki seleksyone a dwe li nan yon sèl kout je. Nou sèvi yon box-shadow
+   andedan olye nou epesi bòdi a: konsa liy nan vin pi fò san layout la sote. */
+.shipping-option:has(input:checked) {
+  border-color: var(--accent-red);
+  box-shadow: inset 0 0 0 1px var(--accent-red);
+  background: rgba(227, 6, 19, 0.05);
+  font-weight: 700;
+}
+
+.shipping-option:focus-within {
+  outline: 2px solid var(--accent-red);
+  outline-offset: 2px;
 }
 
 .checkout-terms-notice {
