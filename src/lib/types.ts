@@ -148,12 +148,3 @@ export interface TechnicalMetadata {
     zone: string
 }
 
-export interface ArchiveSeason {
-    id: string
-    title: string
-    year: string
-    description: string
-    highlights: string[]
-    images: string[]
-    instagramTag: string
-}

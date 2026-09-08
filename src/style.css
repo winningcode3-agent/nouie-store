@@ -1020,198 +1020,11 @@ body {
   margin: 0 auto;
 }
 
-.archive-grid {
-  display: flex;
-  flex-direction: column;
-  gap: 80px;
-}
 
 /* Kat ARCHIVE la. Markup la te reyekri lè koleksyon Supabase yo te vini men
    CSS la pa t swiv: `.archive-card*` pa t gen okenn règ, donk imaj yo t ap
    rann nan gwosè natirèl yo (jiska 1920px) epi telefòn nan te rapetise tout
    paj la pou l antre — se sa ki t ap bay zoum lan. */
-.archive-card {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 40px;
-  align-items: center;
-  padding-bottom: 80px;
-  border-bottom: 1px solid var(--border-light);
-}
-
-.archive-card:last-child {
-  border-bottom: none;
-  padding-bottom: 0;
-}
-
-.archive-card-image {
-  aspect-ratio: 3/4;
-  overflow: hidden;
-  background: #fcfcfc;
-  border: 1px solid var(--border-light);
-}
-
-.archive-card-image img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  transition: transform 0.8s ease;
-}
-
-.archive-card:hover .archive-card-image img {
-  transform: scale(1.05);
-}
-
-.archive-card-info {
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  gap: 16px;
-  min-width: 0;
-}
-
-.archive-card-info h2 {
-  font-size: 1.4rem;
-  font-weight: 900;
-  letter-spacing: 0.25em;
-  margin: 0;
-}
-
-.archive-card-info p {
-  color: var(--text-secondary);
-  line-height: 1.7;
-  margin: 0;
-}
-
-@media (max-width: 768px) {
-  .archive-card {
-    grid-template-columns: 1fr;
-    gap: 20px;
-    padding-bottom: 48px;
-  }
-
-  .archive-card-info h2 {
-    font-size: 1.1rem;
-    letter-spacing: 0.15em;
-  }
-}
-
-.archive-season-card {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 40px;
-  padding-bottom: 80px;
-  border-bottom: 1px solid var(--border-light);
-}
-
-.archive-images {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 15px;
-}
-
-.archive-img {
-  aspect-ratio: 3/4;
-  overflow: hidden;
-  background: #fcfcfc;
-  border: 1px solid var(--border-light);
-}
-
-.archive-img img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  transition: transform 0.8s ease;
-}
-
-.archive-season-card:hover .archive-img img {
-  transform: scale(1.05);
-}
-
-.archive-content {
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  gap: 20px;
-}
-
-.archive-year-badge {
-  font-size: 64px;
-  font-weight: 900;
-  color: #eee;
-  line-height: 1;
-}
-
-.archive-season-title {
-  font-size: 1.5rem;
-  font-weight: 900;
-  letter-spacing: 0.3em;
-  margin: 0;
-}
-
-.archive-description {
-  font-size: 14px;
-  line-height: 1.7;
-  color: #666;
-  max-width: 440px;
-}
-
-.archive-highlights {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 10px;
-}
-
-.highlight-tag {
-  font-size: 10px;
-  letter-spacing: 0.1em;
-  padding: 6px 12px;
-  border: 1px solid #eee;
-  color: #999;
-  text-transform: uppercase;
-}
-
-.archive-instagram a {
-  color: #999;
-  text-decoration: none;
-  font-size: 11px;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-  transition: color 0.3s ease;
-}
-
-.archive-instagram a:hover {
-  color: #000;
-}
-
-.archive-footer {
-  text-align: center;
-  padding: 80px 0;
-  font-size: 12px;
-  letter-spacing: 0.1em;
-  color: #999;
-}
-
-.archive-footer a {
-  color: #000;
-  text-decoration: none;
-  border-bottom: 1px solid #000;
-}
-
-@media (max-width: 768px) {
-  .archive-season-card {
-    grid-template-columns: 1fr;
-    gap: 2rem;
-  }
-
-  .archive-year-badge {
-    font-size: 2.5rem;
-  }
-
-  .archive-season-title {
-    font-size: 1rem;
-  }
-}
 
 
 /* Studio Content */
@@ -1515,64 +1328,6 @@ body {
   margin: 0 auto;
 }
 
-.lookbook-grid {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 1.5rem;
-}
-
-.lookbook-item {
-  position: relative;
-  overflow: hidden;
-  transition: transform 0.5s ease;
-}
-
-.lookbook-item:hover {
-  transform: scale(1.02);
-}
-
-.lookbook-image {
-  position: relative;
-  aspect-ratio: 3/4;
-  overflow: hidden;
-}
-
-.lookbook-image img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  filter: grayscale(0.3);
-  transition: filter 0.5s ease, transform 0.8s ease;
-}
-
-.lookbook-item:hover .lookbook-image img {
-  filter: grayscale(0);
-  transform: scale(1.05);
-}
-
-.lookbook-overlay {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background: repeating-linear-gradient(0deg,
-      rgba(0, 0, 0, 0.1),
-      rgba(0, 0, 0, 0.1) 1px,
-      transparent 1px,
-      transparent 2px);
-  pointer-events: none;
-}
-
-.lookbook-content {
-  padding: 1rem;
-  background: linear-gradient(to top, rgba(0, 0, 0, 0.9), transparent);
-  position: absolute;
-  bottom: 0;
-  left: 0;
-  width: 100%;
-  box-sizing: border-box;
-}
 
 .look-id {
   font-size: 0.7rem;
@@ -1595,10 +1350,6 @@ body {
   margin-top: 0.5rem;
 }
 
-.lookbook-cta {
-  text-align: center;
-  margin-top: 4rem;
-}
 
 .btn-shop-collection {
   display: inline-block;
@@ -1726,21 +1477,9 @@ body {
     padding: 1.25rem;
   }
 
-  .archive-title {
-    font-size: 0.85rem;
-    letter-spacing: 0.15em;
-  }
 
-  .archive-year {
-    font-size: 0.7rem;
-  }
 }
 
-@media (max-width: 768px) {
-  .lookbook-grid {
-    grid-template-columns: 1fr;
-  }
-}
 
 /* Product Detail Page */
 .product-detail-page {
@@ -4001,9 +3740,6 @@ input:checked+.slider:before {
     gap: 2rem;
   }
 
-  .archive-images {
-    grid-template-columns: 1fr;
-  }
 
   .form-grid {
     grid-template-columns: 1fr;
@@ -4021,4 +3757,71 @@ input:checked+.slider:before {
   opacity: 0.35;
   font-size: 0.85em;
   letter-spacing: 0.1em;
+}
+
+/* ============================================
+   Galeri NOUIE (LOOKBOOK). ARCHIVE fonn ladan l.
+   ============================================ */
+.gallery-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+}
+
+.gallery-item {
+  margin: 0;
+  position: relative;
+  aspect-ratio: 3 / 4;
+  overflow: hidden;
+  background: #f2f2f2;
+  border: 1px solid var(--border-light);
+  min-width: 0;
+}
+
+/* Videyo orizontal la ak gwo kolaj la respire sou 2 kolòn. */
+.gallery-item--wide {
+  grid-column: span 2;
+  aspect-ratio: 16 / 9;
+}
+
+.gallery-item img,
+.gallery-item video {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  background: #000;
+  transition: transform 0.8s ease;
+}
+
+.gallery-item:hover img {
+  transform: scale(1.04);
+}
+
+.gallery-item figcaption {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  padding: 10px 12px;
+  font-size: 0.65rem;
+  letter-spacing: 0.2em;
+  color: #fff;
+  background: linear-gradient(transparent, rgba(0, 0, 0, 0.75));
+}
+
+.gallery-past-header {
+  margin-top: 64px;
+}
+
+@media (max-width: 768px) {
+  .gallery-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 8px;
+  }
+
+  /* Sou telefòn yon dyapo laj pran tout lajè a — se konsa li li byen. */
+  .gallery-item--wide {
+    grid-column: span 2;
+  }
 }

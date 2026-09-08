@@ -2,7 +2,7 @@
 
 import { supabase } from '../lib/supabase'
 import { cartStore } from '../lib/store'
-import { catalogs, archiveSeasons } from '../lib/data'
+import { catalogs } from '../lib/data'
 import type { Product, Collection } from '../lib/types'
 import { SEO } from '../lib/seo'
 import { settingsService } from '../lib/settings'
@@ -258,16 +258,17 @@ All graphics, designs, logos, product names, and content appearing on this site 
         await this.renderCollection(contentDiv)
         break
       case 'archive':
-        SEO.updateMeta('ARCHIVE', 'Explore past NOUIE seasons and design evolutions.')
-        await this.renderArchive(contentDiv)
-        break
+        // ARCHIVE fonn nan LOOKBOOK. Nou redireksyone olye nou bay 404: lyen
+        // ki te deja pataje yo dwe kontinye rive yon kote ki gen sans.
+        window.location.replace('#lookbook')
+        return
       case 'studio':
         SEO.updateMeta('STUDIO', 'Inside the NOUIE design philosophy and technical process.')
         this.renderStudio(contentDiv)
         break
       case 'lookbook':
-        SEO.updateMeta('LOOKBOOK', 'Visual narratives and styling from the NOUIE universe.')
-        this.renderLookbook(contentDiv)
+        SEO.updateMeta('LOOKBOOK', 'The NOUIE gallery — imagery, detail and motion from the NOUIE universe.')
+        await this.renderLookbook(contentDiv)
         break
       case 'checkout':
         SEO.updateMeta('CHECKOUT', 'Secure checkout for your NOUIE technical gear.')
@@ -625,62 +626,6 @@ All graphics, designs, logos, product names, and content appearing on this site 
     }
   }
 
-  private async renderArchive(contentDiv: HTMLElement): Promise<void> {
-    contentDiv.innerHTML = `
-      <div class="archive-page">
-        <div class="page-header">
-          <h1>ARCHIVE</h1>
-          <p>PAST SEASONS & ARCHIVAL ARTIFACTS</p>
-        </div>
-        <div id="archive-grid" class="archive-grid">
-          <div class="loading-state">LOADING ARCHIVE...</div>
-        </div>
-      </div>
-    `
-    const grid = document.getElementById('archive-grid')
-    if (!grid) return
-
-    try {
-      const { data: archivedCols, error } = await supabase
-        .from('collections')
-        .select('*')
-        .eq('is_archived', true)
-        .order('sort_order', { ascending: true })
-
-      if (!error && archivedCols && archivedCols.length > 0) {
-        grid.innerHTML = archivedCols.map((col: Collection) => `
-          <div class="archive-card">
-            <div class="archive-card-image">
-              <img src="${this.getImageSrc(col.cover_image)}" alt="${col.title}" loading="lazy">
-            </div>
-            <div class="archive-card-info">
-              <h2>${col.title}</h2>
-              <p>${col.description || ''}</p>
-            </div>
-          </div>
-        `).join('')
-        return
-      }
-    } catch (err) {
-      console.warn('Could not fetch archived collections:', err)
-    }
-
-    grid.innerHTML = archiveSeasons.map(season => `
-      <div class="archive-card">
-        <div class="archive-card-image">
-          <img src="${this.getImageSrc(season.images[0])}" alt="${season.title}" loading="lazy">
-        </div>
-        <div class="archive-card-info">
-          <h2>${season.title} // ${season.year}</h2>
-          <p>${season.description}</p>
-          <div class="archive-highlights">
-            ${season.highlights.map(h => `<span class="highlight-tag">${h}</span>`).join('')}
-          </div>
-        </div>
-      </div>
-    `).join('')
-  }
-
   private renderStudio(contentDiv: HTMLElement): void {
     contentDiv.innerHTML = `
       <div class="studio-page">
@@ -706,38 +651,81 @@ All graphics, designs, logos, product names, and content appearing on this site 
     `
   }
 
-  private renderLookbook(contentDiv: HTMLElement): void {
+  // Galeri NOUIE. Videyo 16:9 la pran 2 kolòn; rès la se kare 3/4.
+  private static readonly GALLERY: Array<{ img?: string; video?: string; alt: string; wide?: boolean }> = [
+    { img: 'home_cover_collage.jpg', alt: 'NOUIE SS26 editorial collage', wide: true },
+    { img: 'soldier_thermal_1.jpg', alt: 'Soldier Thermals' },
+    { img: 'editorial_1.png', alt: 'NOUIE editorial 01' },
+    { video: 'nouie_clip_01.mp4', alt: 'NOUIE clip 01' },
+    { img: 'cat1_1.jpg', alt: 'Soldier Thermals detail' },
+    { img: 'editorial_2.png', alt: 'NOUIE editorial 02' },
+    { img: 'home_editorial_1.jpg', alt: 'NOUIE editorial 03' },
+    { video: 'ddg_streamer_review.mp4', alt: 'Spotted — streamer review', wide: true },
+    { img: 'cat2_1.jpg', alt: 'NOUIE Tee' },
+    { img: 'editorial_3.png', alt: 'NOUIE editorial 04' },
+    { img: 'home_editorial_2.jpg', alt: 'NOUIE editorial 05' },
+    { video: 'nouie_clip_02.mp4', alt: 'NOUIE clip 02' },
+    { img: 'cat3_1.png', alt: 'NOUIE Jersey' },
+    { img: 'editorial_4.png', alt: 'NOUIE editorial 06' },
+    { img: 'home_editorial_3.jpg', alt: 'NOUIE editorial 07' },
+    { img: 'cat1_3.jpg', alt: 'Soldier Thermals detail 02' },
+    { img: 'cat2_3.jpg', alt: 'NOUIE Tee detail' },
+    { img: 'cat3_3.png', alt: 'NOUIE Jersey detail' },
+    { img: 'hoodie.png', alt: 'NOUIE hoodie' },
+    { img: 'pants.png', alt: 'NOUIE pants' },
+    { img: 'sneakers.png', alt: 'NOUIE sneakers' },
+  ]
+
+  private async renderLookbook(contentDiv: HTMLElement): Promise<void> {
+    const tile = (t: { img?: string; video?: string; alt: string; wide?: boolean }) => `
+      <figure class="gallery-item${t.wide ? ' gallery-item--wide' : ''}">
+        ${t.video
+          ? `<video src="/assets/video/${t.video}" controls playsinline preload="metadata" aria-label="${t.alt}"></video>`
+          : `<img src="/assets/${t.img}" alt="${t.alt}" loading="lazy">`}
+      </figure>`
+
     contentDiv.innerHTML = `
       <div class="lookbook-page">
         <div class="page-header">
           <h1>LOOKBOOK</h1>
-          <p>SEASONAL VISUAL NARRATIVE</p>
+          <p>THE NOUIE GALLERY — IMAGERY, DETAIL & MOTION</p>
         </div>
-        <div class="lookbook-grid">
-          <div class="lookbook-item">
-            <div class="lookbook-image">
-              <img src="/assets/cat1_1.jpg" alt="Look 01 - Soldier Thermals" loading="lazy">
-              <div class="lookbook-overlay"></div>
-            </div>
-            <div class="lookbook-caption">LOOK 01 // SOLDIER THERMALS</div>
-          </div>
-          <div class="lookbook-item">
-            <div class="lookbook-image">
-              <img src="/assets/cat2_1.jpg" alt="Look 02 - NOUIE Tee" loading="lazy">
-              <div class="lookbook-overlay"></div>
-            </div>
-            <div class="lookbook-caption">LOOK 02 // NOUIE TEE</div>
-          </div>
-          <div class="lookbook-item">
-            <div class="lookbook-image">
-              <img src="/assets/cat3_1.png" alt="Look 03 - NOUIE Jersey" loading="lazy">
-              <div class="lookbook-overlay"></div>
-            </div>
-            <div class="lookbook-caption">LOOK 03 // NOUIE JERSEY</div>
-          </div>
+        <div class="gallery-grid" id="gallery-grid">
+          ${Pages.GALLERY.map(tile).join('')}
         </div>
+        <div id="gallery-archived"></div>
       </div>
     `
+
+    // Koleksyon Franckley make « ARCHIVED » nan admin nan ateri isit — konsa
+    // travay la pa vin òfelen kounye a ke paj ARCHIVE la fonn nan galeri a.
+    try {
+      const { data, error } = await supabase
+        .from('collections')
+        .select('*')
+        .eq('is_archived', true)
+        .order('sort_order', { ascending: true })
+
+      if (error || !data || data.length === 0) return
+      const host = document.getElementById('gallery-archived')
+      if (!host) return
+
+      host.innerHTML = `
+        <div class="page-header gallery-past-header">
+          <h2>PAST SEASONS</h2>
+        </div>
+        <div class="gallery-grid">
+          ${data.map((col: Collection) => `
+            <figure class="gallery-item">
+              <img src="${this.getImageSrc(col.cover_image)}" alt="${col.title}" loading="lazy">
+              <figcaption>${col.title}</figcaption>
+            </figure>
+          `).join('')}
+        </div>
+      `
+    } catch (err) {
+      console.warn('Could not load archived collections:', err)
+    }
   }
 
   private checkoutUnsubscribe: (() => void) | null = null

@@ -74,7 +74,7 @@ export class UI {
           <div class="footer-nav">
             <a href="#home" class="footer-link">Home</a>
             <a href="#collection" class="footer-link">Collection</a>
-            <a href="#archive" class="footer-link">Archive</a>
+            <a href="#lookbook" class="footer-link">Lookbook</a>
             <a href="#studio" class="footer-link">Studio</a>
           </div>
         </div>
@@ -92,7 +92,7 @@ export class UI {
         
         <div class="footer-column footer-newsletter">
           <h4>UPDATE</h4>
-          <p>Sign up to receive updates on new drops and archive releases.</p>
+          <p>Sign up to receive updates on new drops and upcoming releases.</p>
           <form class="newsletter-form">
             <input type="email" placeholder="EMAIL ADDRESS" class="newsletter-input">
             <button type="submit" class="btn-newsletter-submit">JOIN</button>
@@ -143,7 +143,6 @@ export class UI {
       <nav class="drawer-nav">
         <a href="#home" class="drawer-link">HOME</a>
         <a href="#collection" class="drawer-link">COLLECTION</a>
-        <a href="#archive" class="drawer-link">ARCHIVE</a>
         <a href="#studio" class="drawer-link">STUDIO</a>
         <a href="#lookbook" class="drawer-link">LOOKBOOK</a>
       </nav>
