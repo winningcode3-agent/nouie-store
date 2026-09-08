@@ -652,28 +652,28 @@ All graphics, designs, logos, product names, and content appearing on this site 
   }
 
   // Galeri NOUIE. Videyo 16:9 la pran 2 kolòn; rès la se kare 3/4.
+  // RÈG: sèlman vrè foto pwodwi NOUIE ak videyo Franckley bay.
+  // Pa ajoute anyen isit ki pa t deja ap sèvi sou sit la — dosye `assets/`
+  // la gen randi AI ki soti nan yon faz prototip (hoodie, pants, sneakers,
+  // editorial_*, home_editorial_*). Yo pa reprezante vrè pwodwi.
   private static readonly GALLERY: Array<{ img?: string; video?: string; alt: string; wide?: boolean }> = [
     { img: 'home_cover_collage.jpg', alt: 'NOUIE SS26 editorial collage', wide: true },
     { img: 'soldier_thermal_1.jpg', alt: 'Soldier Thermals' },
-    { img: 'editorial_1.png', alt: 'NOUIE editorial 01' },
+    { img: 'cat1_1.jpg', alt: 'Soldier Thermals' },
     { video: 'nouie_clip_01.mp4', alt: 'NOUIE clip 01' },
-    { img: 'cat1_1.jpg', alt: 'Soldier Thermals detail' },
-    { img: 'editorial_2.png', alt: 'NOUIE editorial 02' },
-    { img: 'home_editorial_1.jpg', alt: 'NOUIE editorial 03' },
-    { video: 'ddg_streamer_review.mp4', alt: 'Spotted — streamer review', wide: true },
+    { img: 'cat1_2.jpg', alt: 'Soldier Thermals detail' },
+    { img: 'cat1_3.jpg', alt: 'Soldier Thermals detail' },
     { img: 'cat2_1.jpg', alt: 'NOUIE Tee' },
-    { img: 'editorial_3.png', alt: 'NOUIE editorial 04' },
-    { img: 'home_editorial_2.jpg', alt: 'NOUIE editorial 05' },
-    { video: 'nouie_clip_02.mp4', alt: 'NOUIE clip 02' },
-    { img: 'cat3_1.png', alt: 'NOUIE Jersey' },
-    { img: 'editorial_4.png', alt: 'NOUIE editorial 06' },
-    { img: 'home_editorial_3.jpg', alt: 'NOUIE editorial 07' },
-    { img: 'cat1_3.jpg', alt: 'Soldier Thermals detail 02' },
+    { video: 'ddg_streamer_review.mp4', alt: 'Spotted — streamer review', wide: true },
+    { img: 'cat2_2.jpg', alt: 'NOUIE Tee detail' },
     { img: 'cat2_3.jpg', alt: 'NOUIE Tee detail' },
+    { img: 'cat3_1.png', alt: 'NOUIE Jersey' },
+    { video: 'nouie_clip_02.mp4', alt: 'NOUIE clip 02' },
+    { img: 'cat3_2.png', alt: 'NOUIE Jersey detail' },
     { img: 'cat3_3.png', alt: 'NOUIE Jersey detail' },
-    { img: 'hoodie.png', alt: 'NOUIE hoodie' },
-    { img: 'pants.png', alt: 'NOUIE pants' },
-    { img: 'sneakers.png', alt: 'NOUIE sneakers' },
+    { img: 'cat1_4.png', alt: 'Soldier Thermals detail' },
+    { img: 'cat2_4.jpg', alt: 'NOUIE Tee detail' },
+    { img: 'cat3_4.png', alt: 'NOUIE Jersey detail' },
   ]
 
   private async renderLookbook(contentDiv: HTMLElement): Promise<void> {
