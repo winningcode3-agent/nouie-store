@@ -1925,6 +1925,14 @@ body {
   margin-top: 3rem;
 }
 
+/* Yon kolòn grid pa ka vin pi piti pase kontni minimòm li (min-width:auto).
+   San sa a, yon sèl mo long andedan yon kolòn fòse tout paj la pi laj pase
+   ekran telefòn nan — epi kòm body gen overflow-x:hidden, pri yo ak tèks
+   bouton an tou senpleman disparèt olye paj la woule. */
+.checkout-layout > * {
+  min-width: 0;
+}
+
 .checkout-form-section h2,
 .checkout-summary-section h2 {
   font-size: 1.2rem;
