@@ -5,6 +5,13 @@ import type { Product } from './types'
 export class SEO {
     private static baseUrl = window.location.origin
 
+    // Foto pwodwi ka se yon non fichye lokal oswa yon URL Supabase Storage
+    // konplè (imaj Franckley telechaje nan admin nan). San tchèk sa a, JSON-LD
+    // la bay `https://no-uie.com/assets/https://...` — kase pou Google.
+    private static imageUrl(img: string): string {
+        return img.startsWith('http') ? img : `${this.baseUrl}/assets/${img}`
+    }
+
     /**
      * Updates meta tags for a given page
      */
@@ -49,7 +56,7 @@ export class SEO {
         const schema: any = {
             '@type': 'Product',
             'name': product.name,
-            'image': product.images.map(img => `${this.baseUrl}/assets/${img}`),
+            'image': product.images.map(img => this.imageUrl(img)),
             'description': product.description,
             'sku': product.sku,
             'brand': {
@@ -108,7 +115,7 @@ export class SEO {
                 'name': v.name,
                 'sku': v.sku,
                 'color': v.color,
-                'image': v.images.map(img => `${this.baseUrl}/assets/${img}`),
+                'image': v.images.map(img => SEO.imageUrl(img)),
                 'offers': {
                     '@type': 'Offer',
                     'price': v.price,
