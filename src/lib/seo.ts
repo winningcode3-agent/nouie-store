@@ -130,7 +130,7 @@ export class SEO {
             'name': 'NOUIE',
             'url': this.baseUrl,
             'logo': `${this.baseUrl}/favicon.svg`,
-            'sameAs': ['https://www.instagram.com/_nouie/'],
+            'sameAs': ['https://www.instagram.com/_nouie'],
             'description': 'Evolution of streetwear through technical precision and architectural symmetry.'
         }
     }
