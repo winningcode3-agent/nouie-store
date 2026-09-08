@@ -2065,6 +2065,10 @@ body {
   font-size: 0.75rem;
   letter-spacing: 0.2em;
   text-align: center;
+  /* Yon sèl mo long (non pwodwi, kòd) pa gen dwa pouse paj la pi laj pase
+     ekran an: `body` gen overflow-x:hidden, donk sa pa bay yon defilman —
+     li KOUPE pri yo sou telefòn. */
+  overflow-wrap: anywhere;
 }
 
 .order-status .loading {
