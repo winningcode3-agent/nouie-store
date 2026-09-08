@@ -196,8 +196,10 @@ export class AdminDashboard {
             <td class="order-status">
               <select class="status-select status-badge-${order.status}" data-id="${order.id}" data-prev="${order.status}">
                 <option value="pending" ${order.status === 'pending' ? 'selected' : ''}>PENDING</option>
-                <option value="paid" ${order.status === 'paid' ? 'selected' : ''}>PAID</option>
-                <option value="payment_review" ${order.status === 'payment_review' ? 'selected' : ''}>PAYMENT REVIEW</option>
+                <!-- PAID ak PAYMENT REVIEW se Stripe ki fikse yo (webhook). Yo la pou afichaj
+                     sèlman: si yon moun ta ka chwazi PAID alamen, tout gad peman an tonbe. -->
+                <option value="paid" ${order.status === 'paid' ? 'selected' : ''} disabled>PAID</option>
+                <option value="payment_review" ${order.status === 'payment_review' ? 'selected' : ''} disabled>PAYMENT REVIEW</option>
                 <option value="processing" ${order.status === 'processing' ? 'selected' : ''}>PROCESSING</option>
                 <option value="shipped" ${order.status === 'shipped' ? 'selected' : ''}>SHIPPED</option>
                 <option value="delivered" ${order.status === 'delivered' ? 'selected' : ''}>DELIVERED</option>
@@ -237,9 +239,13 @@ export class AdminDashboard {
                         const prevStatus = target.getAttribute('data-prev') || 'pending'
                         const order = allOrders.find((o: any) => o.id.toString() === id)
 
-                        // Sekirite: Bloke chanjman nan processing/shipped/delivered si kòmand lan poko peye
-                        if (prevStatus === 'pending' && ['processing', 'shipped', 'delivered'].includes(newStatus)) {
-                            alert('PA LIVRE — KÒMAND SA A PA PEYE!\n(CANNOT FULFILL UNPAID ORDER. Wait until payment is confirmed by Stripe.)')
+                        // Sekirite: Bloke chanjman nan processing/shipped/delivered si kòmand lan poko peye.
+                        // 'payment_review' ladan tou: montan Stripe la pa t matche montan kòmand lan.
+                        if (['pending', 'payment_review'].includes(prevStatus) && ['processing', 'shipped', 'delivered'].includes(newStatus)) {
+                            const why = prevStatus === 'payment_review'
+                                ? 'PEMAN AN PA MATCHE MONTAN KÒMAND LAN — VERIFYE NAN STRIPE ANVAN.\n(PAYMENT MISMATCH. Verify in Stripe dashboard before fulfilling.)'
+                                : 'PA LIVRE — KÒMAND SA A PA PEYE!\n(CANNOT FULFILL UNPAID ORDER. Wait until payment is confirmed by Stripe.)'
+                            alert(why)
                             target.value = prevStatus
                             return
                         }

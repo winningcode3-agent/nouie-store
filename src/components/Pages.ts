@@ -984,12 +984,25 @@ All graphics, designs, logos, product names, and content appearing on this site 
 
     try {
       // Rele Edge Function create-checkout-session ki rele place_order bò sèvè
-      const { data, error } = await supabase.functions.invoke('create-checkout-session', {
+      const { data, error, response } = await supabase.functions.invoke('create-checkout-session', {
         body: payload,
-      })
+      }) as { data: any; error: any; response?: Response }
 
       if (error || !data || data.error) {
-        const errMsg = error?.message || data?.error || 'CHECKOUT INITIATION FAILED'
+        // supabase-js mete yon mesaj jenerik ('Edge Function returned a non-2xx
+        // status code') nan error.message; vrè mesaj biznis la (ESTOK_ENSIFIZAN,
+        // RABE_ENVALID...) rete nan kò repons lan. San lekti sa a, TOUT mapping
+        // erè anba yo mouri an silans.
+        let bodyErr = ''
+        const raw = response ?? (error as any)?.context
+        if (raw && typeof raw.json === 'function') {
+          try {
+            const parsed = await raw.clone().json()
+            bodyErr = parsed?.error || ''
+          } catch { /* kò a pa JSON — nou tonbe sou error.message */ }
+        }
+
+        const errMsg = bodyErr || data?.error || error?.message || 'CHECKOUT INITIATION FAILED'
         console.error('Checkout session creation error:', errMsg)
         let userMessage = errMsg
 
@@ -1043,11 +1056,25 @@ All graphics, designs, logos, product names, and content appearing on this site 
 
   private renderOrderSuccess(contentDiv: HTMLElement): void {
     SEO.updateMeta('ORDER CONFIRMED', 'Thank you for your NOUIE purchase.')
-    // Lè peman an konfime, vide panyen an epi li nimewo kòmand lan
-    cartStore.clear()
 
     const orderId = sessionStorage.getItem('nouie_pending_order')
-    const ref = orderId ? `#INV-${orderId}` : `REF_${Date.now().toString(36).toUpperCase()}`
+
+    // Yon vizitè ki tape #order/success dirèkteman (oswa ki resevwa lyen an) pa
+    // gen okenn kòmand an kou: nou pa gen dwa vide panyen l ni di l li peye.
+    if (!orderId) {
+      contentDiv.innerHTML = `
+        <div class="order-success">
+          <h1>NO RECENT ORDER</h1>
+          <p>We have no checkout session on this device. If you just paid, check your email for the Stripe receipt.</p>
+          <a href="#collection" class="btn-continue">CONTINUE BROWSING</a>
+        </div>
+      `
+      return
+    }
+
+    // Kliyan an sot nan Stripe: vide panyen an epi montre nimewo kòmand lan
+    cartStore.clear()
+    const ref = `#INV-${orderId}`
     sessionStorage.removeItem('nouie_pending_order')
 
     contentDiv.innerHTML = `

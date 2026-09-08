@@ -2,14 +2,17 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import Stripe from "npm:stripe@17"
 import { createClient } from "npm:@supabase/supabase-js@2"
 
-const stripeSecretKey = Deno.env.get("STRIPE_SECRET_KEY") || ""
-const stripeWebhookSecret = Deno.env.get("STRIPE_WEBHOOK_SECRET") || ""
+// Retire tout espas blan — gade nòt nan create-checkout-session.
+const stripeSecretKey = (Deno.env.get("STRIPE_SECRET_KEY") || "").replace(/\s+/g, "")
+const stripeWebhookSecret = (Deno.env.get("STRIPE_WEBHOOK_SECRET") || "").replace(/\s+/g, "")
 const supabaseUrl = Deno.env.get("SUPABASE_URL") || ""
 const supabaseServiceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") || ""
 
+// Menm rezon ak create-checkout-session: fetch() se sèl chemen rezo nan
+// izolan Edge la. (Verifikasyon siyati a se pi ba, ak SubtleCryptoProvider.)
 const stripe = new Stripe(stripeSecretKey, {
   apiVersion: "2024-12-18.acacia" as any,
-  httpClient: Stripe.createSubtleCryptoProvider() as any,
+  httpClient: Stripe.createFetchHttpClient(),
 })
 
 serve(async (req: Request) => {
@@ -123,11 +126,27 @@ serve(async (req: Request) => {
 
         if (orderIdStr) {
           const orderId = Number(orderIdStr)
-          console.log(`Sesyon Stripe ekspire pou kòmand #${orderId}. Rele cancel_order pou remèt estòk...`)
-          // cancel_order sèvi service_role kounye a gras ak migrasyon 0012
-          const { error: cancelErr } = await supabase.rpc("cancel_order", { p_order_id: orderId })
-          if (cancelErr) {
-            console.warn(`cancel_order sou sesyon ekspire #${orderId}:`, cancelErr.message)
+
+          // Sèlman yon kòmand ki toujou 'pending' gen dwa restoke.
+          // San tchèk sa a, yon evènman 'expired' sou yon kòmand deja PEYE ta
+          // remèt estòk la epi make kòmand lan 'cancelled' — peman an vin envizib.
+          const { data: order } = await supabase
+            .from("orders")
+            .select("id, status")
+            .eq("id", orderId)
+            .maybeSingle()
+
+          if (!order) {
+            console.warn(`Sesyon ekspire pou kòmand #${orderId} ki pa jwenn nan DB.`)
+          } else if (order.status !== "pending") {
+            console.log(`Sesyon ekspire pou kòmand #${orderId} nan estati '${order.status}' — pa touche.`)
+          } else {
+            console.log(`Sesyon Stripe ekspire pou kòmand #${orderId}. Rele cancel_order pou remèt estòk...`)
+            // cancel_order sèvi service_role kounye a gras ak migrasyon 0012
+            const { error: cancelErr } = await supabase.rpc("cancel_order", { p_order_id: orderId })
+            if (cancelErr) {
+              console.warn(`cancel_order sou sesyon ekspire #${orderId}:`, cancelErr.message)
+            }
           }
         }
         return new Response(JSON.stringify({ received: true, action: "restocked" }), { status: 200 })

@@ -2,18 +2,25 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import Stripe from "npm:stripe@17"
 import { createClient } from "npm:@supabase/supabase-js@2"
 
-const stripeSecretKey = Deno.env.get("STRIPE_SECRET_KEY") || ""
+// Retire TOUT espas blan: yon kle ki kole depi yon mesaj vlope pote \n nan mitan l,
+// sa bay yon antèt HTTP envalid epi stripe-node rapòte l kòm erè koneksyon.
+// Yon vrè kle Stripe pa janm gen espas, donk sa a san danje.
+const stripeSecretKey = (Deno.env.get("STRIPE_SECRET_KEY") || "").replace(/\s+/g, "")
 const supabaseUrl = Deno.env.get("SUPABASE_URL") || ""
 const supabaseServiceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") || ""
-const siteUrl = Deno.env.get("SITE_URL") || "https://no-uie.com"
+const siteUrl = (Deno.env.get("SITE_URL") || "https://no-uie.com").replace(/\/+$/, "")
 
+// httpClient OBLIGATWA sou Supabase Edge Runtime: kliyan defo stripe-node an
+// sèvi modil `node:https`, ki pa gen sokèt nan izolan Deno a → StripeConnectionError.
+// createFetchHttpClient() sèvi fetch(), sèl chemen rezo ki disponib la.
 const stripe = new Stripe(stripeSecretKey, {
   apiVersion: "2024-12-18.acacia" as any,
-  httpClient: Stripe.createSubtleCryptoProvider() as any,
+  httpClient: Stripe.createFetchHttpClient(),
 })
 
 const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Origin": siteUrl,
+  "Vary": "Origin",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
   "Access-Control-Allow-Methods": "POST, OPTIONS",
 }
@@ -38,13 +45,16 @@ serve(async (req: Request) => {
       previous_order_id,
     } = body
 
-    // 1. Si gen yon previous_order_id ki te pending, libere estòk li anvan nou kreye nouvo
+    // 1. Si gen yon previous_order_id ki te pending, libere estòk li anvan nou kreye nouvo.
+    //    Imèl la dwe matche: san sa nenpòt moun ta ka anile kòmand nenpòt lòt kliyan
+    //    (id yo se BIGSERIAL, fasil pou devine).
     if (previous_order_id) {
       try {
         const { data: prevOrder } = await supabase
           .from("orders")
-          .select("id, status, stripe_session_id")
+          .select("id, status, stripe_session_id, customer_email")
           .eq("id", previous_order_id)
+          .eq("customer_email", String(p_customer_email || "").trim())
           .maybeSingle()
 
         if (prevOrder && prevOrder.status === "pending") {

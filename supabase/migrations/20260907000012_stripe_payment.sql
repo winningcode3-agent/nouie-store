@@ -73,8 +73,12 @@ AS $$
 DECLARE
   v_success BOOLEAN;
 BEGIN
-  -- Gad: sèlman service_role (Edge Functions) oswa admin verifye nan tab admins
-  IF auth.role() <> 'service_role' AND NOT EXISTS (
+  -- Gad: sèlman service_role (Edge Functions) oswa admin verifye nan tab admins.
+  -- NÒT: nou sèvi auth.jwt()->>'role' epi PA auth.role(). auth.role() se yon
+  -- fonksyon Supabase depresye ki ka absan sou nouvo pwojè; si l absan, tout
+  -- apèl cancel_order ta echwe (admin AK webhook). auth.jwt() pwouve l ap
+  -- travay sou baz sa a — se li menm politik RLS 0001 yo sèvi.
+  IF COALESCE(auth.jwt()->>'role', '') <> 'service_role' AND NOT EXISTS (
     SELECT 1 FROM public.admins WHERE email = auth.jwt()->>'email'
   ) THEN
     RAISE EXCEPTION 'AKSE_REFIZE: Sèl administratè oswa sèvis otorize ki ka anile kòmand.';
@@ -120,7 +124,12 @@ $$;
 REVOKE ALL ON FUNCTION public.release_stale_orders() FROM PUBLIC, anon, authenticated;
 GRANT EXECUTE ON FUNCTION public.release_stale_orders() TO service_role;
 
--- 5. pg_cron schedule pou kouri chak 10 minit (si pg_cron aktif sou pwojè a)
+-- 5. pg_cron: aktive ekstansyon an epi pwograme netwayaj la chak 10 minit.
+--    CREATE EXTENSION dwe rete yon deklarasyon apa: blòk DO a ap fè referans a
+--    `cron.*` sèlman nan ekzekisyon (kò a se yon chèn pou analizè a), donk chema
+--    a ka fèt jis anvan. Yon `SELECT cron.…` dirèk isit ta echwe nan analiz.
+CREATE EXTENSION IF NOT EXISTS pg_cron;
+
 DO $$
 BEGIN
   IF EXISTS (SELECT 1 FROM pg_extension WHERE extname = 'pg_cron') THEN
@@ -136,5 +145,24 @@ EXCEPTION
 END $$;
 
 -- 6. Verifikasyon final nan pye migrasyon an
+-- Dwe bay 3 liy:
 SELECT proname FROM pg_proc WHERE proname IN ('_restock_order', 'cancel_order', 'release_stale_orders');
+-- Dwe bay 1 liy:
 SELECT conname, contype FROM pg_constraint WHERE conname = 'orders_status_check';
+-- Eta cron an. NÒT: nou sèvi EXECUTE (SQL dinamik) espre — yon
+-- `SELECT ... FROM cron.job` dirèk ap echwe ak 42P01 lè pg_cron poko aktive
+-- (chema `cron` lan pa egziste), epi sa ta fè TOUT migrasyon an woule anaryè.
+DO $$
+DECLARE v_cnt INT := 0;
+BEGIN
+  IF EXISTS (SELECT 1 FROM pg_extension WHERE extname = 'pg_cron') THEN
+    EXECUTE 'SELECT count(*) FROM cron.job WHERE jobname = ''nouie-release-stale-orders''' INTO v_cnt;
+    IF v_cnt = 1 THEN
+      RAISE NOTICE 'OK: cron nouie-release-stale-orders aktif (chak 10 min).';
+    ELSE
+      RAISE WARNING 'pg_cron aktif men job la pa kreye — rekouri seksyon 5.';
+    END IF;
+  ELSE
+    RAISE WARNING 'pg_cron PA AKTIVE: twazyèm filè estòk la (45 min) PA EGZISTE. Aktive nan Dashboard -> Database -> Extensions, epi rekouri seksyon 5.';
+  END IF;
+END $$;
