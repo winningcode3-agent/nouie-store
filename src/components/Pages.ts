@@ -380,7 +380,18 @@ All graphics, designs, logos, product names, and content appearing on this site 
           <h2>SPOTTED</h2>
           <p>REAL REACTIONS FROM REAL PEOPLE</p>
         </div>
-        <video class="spotted-video" src="/assets/video/ddg_streamer_review.mp4" controls playsinline preload="metadata"></video>
+        <div class="spotted-track">
+          <div class="spotted-slide">
+            <video src="/assets/video/nouie_clip_01.mp4" controls playsinline preload="metadata"></video>
+          </div>
+          <div class="spotted-slide">
+            <video src="/assets/video/ddg_streamer_review.mp4" controls playsinline preload="metadata"></video>
+          </div>
+          <div class="spotted-slide">
+            <video src="/assets/video/nouie_clip_02.mp4" controls playsinline preload="metadata"></video>
+          </div>
+        </div>
+        <p class="spotted-hint">SWIPE FOR MORE</p>
       </div>
     `
 

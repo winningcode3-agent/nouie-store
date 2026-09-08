@@ -64,13 +64,51 @@ body {
   margin: 0 auto;
 }
 
-.spotted-video {
-  display: block;
-  width: 100%;
-  max-width: 560px;
-  margin: 0 auto;
-  border-radius: 4px;
+/* Karousèl videyo: defilman orizontal ak scroll-snap. Zewo bibliyotèk —
+   glisman dwèt la se konpòtman natif navigatè a, epi sourit/trackpad mache
+   sou òdinatè. Videyo yo pa gen menm fòma (youn 16:9, de 9:16), donk chak
+   dyapo gen menm wotè epi videyo a santre sou yon fon nwa. */
+.spotted-track {
+  display: flex;
+  gap: 16px;
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  -webkit-overflow-scrolling: touch;
+  padding-bottom: 12px;
+  scrollbar-width: thin;
+}
+
+.spotted-slide {
+  flex: 0 0 auto;
+  scroll-snap-align: center;
   background: #000;
+  border-radius: 4px;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 460px;
+}
+
+.spotted-slide video {
+  display: block;
+  height: 100%;
+  width: auto;
+  max-width: 86vw;
+  background: #000;
+}
+
+.spotted-hint {
+  margin-top: 10px;
+  font-size: 0.65rem;
+  letter-spacing: 0.3em;
+  opacity: 0.4;
+}
+
+@media (max-width: 768px) {
+  .spotted-slide {
+    height: 62vh;
+  }
 }
 
 .section-header {
@@ -986,6 +1024,76 @@ body {
   display: flex;
   flex-direction: column;
   gap: 80px;
+}
+
+/* Kat ARCHIVE la. Markup la te reyekri lè koleksyon Supabase yo te vini men
+   CSS la pa t swiv: `.archive-card*` pa t gen okenn règ, donk imaj yo t ap
+   rann nan gwosè natirèl yo (jiska 1920px) epi telefòn nan te rapetise tout
+   paj la pou l antre — se sa ki t ap bay zoum lan. */
+.archive-card {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 40px;
+  align-items: center;
+  padding-bottom: 80px;
+  border-bottom: 1px solid var(--border-light);
+}
+
+.archive-card:last-child {
+  border-bottom: none;
+  padding-bottom: 0;
+}
+
+.archive-card-image {
+  aspect-ratio: 3/4;
+  overflow: hidden;
+  background: #fcfcfc;
+  border: 1px solid var(--border-light);
+}
+
+.archive-card-image img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.8s ease;
+}
+
+.archive-card:hover .archive-card-image img {
+  transform: scale(1.05);
+}
+
+.archive-card-info {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 16px;
+  min-width: 0;
+}
+
+.archive-card-info h2 {
+  font-size: 1.4rem;
+  font-weight: 900;
+  letter-spacing: 0.25em;
+  margin: 0;
+}
+
+.archive-card-info p {
+  color: var(--text-secondary);
+  line-height: 1.7;
+  margin: 0;
+}
+
+@media (max-width: 768px) {
+  .archive-card {
+    grid-template-columns: 1fr;
+    gap: 20px;
+    padding-bottom: 48px;
+  }
+
+  .archive-card-info h2 {
+    font-size: 1.1rem;
+    letter-spacing: 0.15em;
+  }
 }
 
 .archive-season-card {
