@@ -652,36 +652,24 @@ All graphics, designs, logos, product names, and content appearing on this site 
   }
 
   // Galeri NOUIE. Videyo 16:9 la pran 2 kolòn; rès la se kare 3/4.
-  // RÈG: sèlman vrè foto pwodwi NOUIE ak videyo Franckley bay.
-  // Pa ajoute anyen isit ki pa t deja ap sèvi sou sit la — dosye `assets/`
-  // la gen randi AI ki soti nan yon faz prototip (hoodie, pants, sneakers,
-  // editorial_*, home_editorial_*). Yo pa reprezante vrè pwodwi.
-  private static readonly GALLERY: Array<{ img?: string; video?: string; alt: string; wide?: boolean }> = [
-    { img: 'home_cover_collage.jpg', alt: 'NOUIE SS26 editorial collage', wide: true },
-    { img: 'soldier_thermal_1.jpg', alt: 'Soldier Thermals' },
-    { img: 'cat1_1.jpg', alt: 'Soldier Thermals' },
+  // Videyo yo — sèl kontni galeri a ki kode isit. Tout imaj yo soti nan
+  // katalòg la, donk chak pwodwi Franckley ajoute nan admin nan parèt
+  // otomatikman. RÈG: pa kode okenn non fichye imaj isit. Dosye `assets/`
+  // la te gen randi AI ki soti nan yon faz prototip; sèl sous verite pou
+  // imaj se pwodwi ki nan baz done a.
+  private static readonly GALLERY_VIDEOS: Array<{ video: string; alt: string; wide?: boolean }> = [
     { video: 'nouie_clip_01.mp4', alt: 'NOUIE clip 01' },
-    { img: 'cat1_2.jpg', alt: 'Soldier Thermals detail' },
-    { img: 'cat1_3.jpg', alt: 'Soldier Thermals detail' },
-    { img: 'cat2_1.jpg', alt: 'NOUIE Tee' },
     { video: 'ddg_streamer_review.mp4', alt: 'Spotted — streamer review', wide: true },
-    { img: 'cat2_2.jpg', alt: 'NOUIE Tee detail' },
-    { img: 'cat2_3.jpg', alt: 'NOUIE Tee detail' },
-    { img: 'cat3_1.png', alt: 'NOUIE Jersey' },
     { video: 'nouie_clip_02.mp4', alt: 'NOUIE clip 02' },
-    { img: 'cat3_2.png', alt: 'NOUIE Jersey detail' },
-    { img: 'cat3_3.png', alt: 'NOUIE Jersey detail' },
-    { img: 'cat1_4.png', alt: 'Soldier Thermals detail' },
-    { img: 'cat2_4.jpg', alt: 'NOUIE Tee detail' },
-    { img: 'cat3_4.png', alt: 'NOUIE Jersey detail' },
   ]
 
   private async renderLookbook(contentDiv: HTMLElement): Promise<void> {
+    // `img` la se yon src konplè deja (getImageSrc jere non lokal ak URL Storage).
     const tile = (t: { img?: string; video?: string; alt: string; wide?: boolean }) => `
       <figure class="gallery-item${t.wide ? ' gallery-item--wide' : ''}">
         ${t.video
-          ? `<video src="/assets/video/${t.video}" controls playsinline preload="metadata" aria-label="${t.alt}"></video>`
-          : `<img src="/assets/${t.img}" alt="${t.alt}" loading="lazy">`}
+          ? `<video src="/assets/video/${t.video}" controls playsinline preload="metadata" aria-label="${escapeHtml(t.alt)}"></video>`
+          : `<img src="${t.img}" alt="${escapeHtml(t.alt)}" loading="lazy">`}
       </figure>`
 
     contentDiv.innerHTML = `
@@ -691,11 +679,35 @@ All graphics, designs, logos, product names, and content appearing on this site 
           <p>THE NOUIE GALLERY — IMAGERY, DETAIL & MOTION</p>
         </div>
         <div class="gallery-grid" id="gallery-grid">
-          ${Pages.GALLERY.map(tile).join('')}
+          <div class="loading-state">LOADING GALLERY...</div>
         </div>
         <div id="gallery-archived"></div>
       </div>
     `
+
+    // Tout imaj yo soti nan katalòg la epi videyo yo simen ladan yo.
+    const products = await this.getProducts()
+    const shots = products.flatMap(p =>
+      (p.images || []).map(img => ({ img: this.getImageSrc(img), alt: p.name.trim() }))
+    )
+
+    const tiles: Array<{ img?: string; video?: string; alt: string; wide?: boolean }> = []
+    const step = Math.max(1, Math.ceil(shots.length / (Pages.GALLERY_VIDEOS.length + 1)))
+    let v = 0
+    shots.forEach((shot, i) => {
+      tiles.push(shot)
+      if ((i + 1) % step === 0 && v < Pages.GALLERY_VIDEOS.length) {
+        tiles.push(Pages.GALLERY_VIDEOS[v++])
+      }
+    })
+    while (v < Pages.GALLERY_VIDEOS.length) tiles.push(Pages.GALLERY_VIDEOS[v++])
+
+    const grid = document.getElementById('gallery-grid')
+    if (grid) {
+      grid.innerHTML = tiles.length
+        ? tiles.map(tile).join('')
+        : '<div class="loading-state">GALLERY COMING SOON</div>'
+    }
 
     // Koleksyon Franckley make « ARCHIVED » nan admin nan ateri isit — konsa
     // travay la pa vin òfelen kounye a ke paj ARCHIVE la fonn nan galeri a.
