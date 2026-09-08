@@ -129,7 +129,8 @@ export class SEO {
             '@type': 'Organization',
             'name': 'NOUIE',
             'url': this.baseUrl,
-            'logo': `${this.baseUrl}/vite.svg`,
+            'logo': `${this.baseUrl}/favicon.svg`,
+            'sameAs': ['https://www.instagram.com/_nouie/'],
             'description': 'Evolution of streetwear through technical precision and architectural symmetry.'
         }
     }

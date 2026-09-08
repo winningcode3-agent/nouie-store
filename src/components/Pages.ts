@@ -315,10 +315,25 @@ All graphics, designs, logos, product names, and content appearing on this site 
             SEO.injectJSONLD(SEO.generateProductSchema(product))
             this.renderProductDetail(contentDiv, product)
           } else {
-            contentDiv.innerHTML = '<div class="page-header"><h1>PRODUCT NOT FOUND</h1></div>'
+            SEO.updateMeta('PRODUCT NOT FOUND', 'This piece is no longer available.')
+            this.renderNotFound(contentDiv, 'THIS PIECE IS NO LONGER AVAILABLE.')
           }
+        } else {
+          // San sa a, nenpòt lyen kase (#nenpòt) te kite paj la vid nèt.
+          SEO.updateMeta('PAGE NOT FOUND', 'This page does not exist.')
+          this.renderNotFound(contentDiv, 'THIS PAGE DOES NOT EXIST.')
         }
     }
+  }
+
+  private renderNotFound(contentDiv: HTMLElement, message: string): void {
+    contentDiv.innerHTML = `
+      <div class="order-success">
+        <h1>NOT FOUND</h1>
+        <p>${message}</p>
+        <a href="#collection" class="btn-continue">BROWSE THE COLLECTION</a>
+      </div>
+    `
   }
   // Placeholder enliy: yon pwodwi san foto pa dwe kraze paj la.
   private static readonly NO_IMAGE =

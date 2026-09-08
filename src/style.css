@@ -498,6 +498,14 @@ body {
     width: 100%;
     right: -100%;
   }
+
+  /* Menu a te rete sou 400px fiks — pi laj pase yon ekran telefòn (390px).
+     Rezilta: menu a debòde, epi kòm `left:-100%` bay sèlman -390px, yon bann
+     blan 10px te rete vizib sou bò gòch chak paj. Menm tretman ak panyen an. */
+  .menu-drawer {
+    width: 100%;
+    left: -100%;
+  }
 }
 
 
@@ -1618,28 +1626,6 @@ body {
   .archive-year {
     font-size: 0.7rem;
   }
-}
-
-/* Lookbook Static Grid */
-.lookbook-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 1px;
-  background: rgba(255, 255, 255, 0.1);
-}
-
-.lookbook-item {
-  aspect-ratio: 16/9;
-  background: #000;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.lookbook-img-placeholder {
-  font-size: 0.6rem;
-  letter-spacing: 0.3em;
-  opacity: 0.3;
 }
 
 @media (max-width: 768px) {
@@ -3368,7 +3354,9 @@ input:checked+.slider:before {
 /* Settings Grid */
 .settings-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(360px, 1fr));
+  /* min(360px, 100%) : san sa, pi piti pis la rete 360px epi li debòde yon
+     ekran telefòn (≈358px disponib apre padding). */
+  grid-template-columns: repeat(auto-fit, minmax(min(360px, 100%), 1fr));
   gap: 25px;
   margin-top: 20px;
 }
@@ -3891,5 +3879,31 @@ input:checked+.slider:before {
 @media (max-width: 900px) {
   .editor-workspace {
     grid-template-columns: 1fr;
+  }
+}
+/* ============================================
+   Grid ki pa t gen okenn reglaj telefòn.
+   Yo tout te kenbe plizyè kolòn sou yon ekran 390px: tèks vin kwense,
+   chan fòm yo vin twò etwat pou tape ladan, epi 5 kolòn gwosè yo pa
+   itilizab ditou nan men Franckley sou telefòn li.
+   ============================================ */
+@media (max-width: 768px) {
+  .philosophy-grid {
+    grid-template-columns: 1fr;
+    gap: 2rem;
+  }
+
+  .archive-images {
+    grid-template-columns: 1fr;
+  }
+
+  .form-grid {
+    grid-template-columns: 1fr;
+    gap: 1.25rem;
+  }
+
+  .stock-by-size-grid {
+    grid-template-columns: repeat(3, 1fr);
+    gap: 0.75rem;
   }
 }
