@@ -104,6 +104,7 @@ export class UI {
         <div class="copyright">© ${new Date().getFullYear()} NOUIE. ALL RIGHTS RESERVED. <span class="build-id">${__NOUIE_BUILD__}</span></div>
         <div class="footer-social">
           <a href="https://www.instagram.com/_nouie" target="_blank" rel="noopener" class="footer-link">INSTAGRAM</a>
+          <a href="https://winningcode.agency" target="_blank" rel="noopener" class="footer-credit">CREATED BY WINNING CODE</a>
         </div>
       </div>
     `
@@ -179,16 +180,18 @@ export class UI {
       </div>
     `
     document.body.appendChild(banner)
+    // Banyè a fikse anba ekran an: san plas anba pye paj la, li chita sou
+    // dènye ranje a epi li vale klik sou lyen yo (INSTAGRAM).
+    document.body.classList.add('has-cookie-banner')
 
-    document.getElementById('cookieAccept')?.addEventListener('click', () => {
-      localStorage.setItem('nouie_cookie_consent', 'accepted')
+    const dismiss = (choice: 'accepted' | 'declined') => {
+      localStorage.setItem('nouie_cookie_consent', choice)
       banner.remove()
-    })
+      document.body.classList.remove('has-cookie-banner')
+    }
 
-    document.getElementById('cookieDecline')?.addEventListener('click', () => {
-      localStorage.setItem('nouie_cookie_consent', 'declined')
-      banner.remove()
-    })
+    document.getElementById('cookieAccept')?.addEventListener('click', () => dismiss('accepted'))
+    document.getElementById('cookieDecline')?.addEventListener('click', () => dismiss('declined'))
   }
 
   private addEventListeners(cartDrawer: HTMLElement, menuDrawer: HTMLElement): void {

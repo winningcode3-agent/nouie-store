@@ -3006,8 +3006,18 @@ input:checked+.slider:before {
   z-index: 9999;
   font-size: 0.75rem;
   letter-spacing: 0.05em;
-  color: var(--text-primary, #fff);
+  /* Te var(--text-primary) — ki se #000 sou tèm klè a, donk tèks nwa sou yon
+     banyè nwa: mesaj la te envizib nèt. Banyè a gen pwòp fon li, donk li
+     dwe gen pwòp koulè tèks li tou. */
+  color: #fff;
   animation: slideUp 0.3s ease-out;
+}
+
+/* Banyè a `fixed` anba ekran an, donk li chita SOU dènye ranje pye paj la —
+   se sa ki t ap vale klik sou lyen INSTAGRAM nan. Nou lage plas anba pou
+   pye paj la ka respire toutotan banyè a la. */
+body.has-cookie-banner .footer {
+  padding-bottom: 160px;
 }
 
 .cookie-text {
@@ -3018,9 +3028,11 @@ input:checked+.slider:before {
 }
 
 .cookie-policy-link {
-  color: var(--text-secondary, #888);
+  /* Menm rezon ak banyè a: --text-secondary se #666, twò fonse sou fon nwa. */
+  color: #b8b8b8;
   text-decoration: underline;
   font-size: 0.7rem;
+  white-space: nowrap;
 }
 
 .cookie-policy-link:hover {
@@ -3057,8 +3069,10 @@ input:checked+.slider:before {
 
 .btn-cookie-decline {
   background: transparent;
-  color: var(--text-secondary, #888);
-  border: 1px solid var(--border-light, #333);
+  /* Sou fon nwa banyè a: --text-secondary (#666) ak --border-light
+     (rgba(0,0,0,.08)) prèske envizib. Valè eksplisit yo. */
+  color: #cfcfcf;
+  border: 1px solid rgba(255, 255, 255, 0.35);
 }
 
 .btn-cookie-decline:hover {
@@ -3841,5 +3855,35 @@ input:checked+.slider:before {
   /* Sou telefòn yon dyapo laj pran tout lajè a — se konsa li li byen. */
   .gallery-item--wide {
     grid-column: span 2;
+  }
+}
+
+/* Kredi Winning Code nan pye paj la — diskrè, men klikab. */
+.footer-social {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  flex-wrap: wrap;
+}
+
+.footer-credit {
+  font-size: 0.65rem;
+  letter-spacing: 0.15em;
+  color: var(--text-secondary);
+  text-decoration: none;
+  opacity: 0.65;
+  transition: opacity 0.2s ease, color 0.2s ease;
+}
+
+.footer-credit:hover {
+  opacity: 1;
+  color: var(--accent-red);
+}
+
+@media (max-width: 768px) {
+  .footer-bottom {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
   }
 }
