@@ -939,7 +939,8 @@ All graphics, designs, logos, product names, and content appearing on this site 
         }
         renderTotals()
       } catch (err: any) {
-        feedback.innerHTML = `<span class="warning">VALIDATION ERROR: ${err.message}</span>`
+        console.error('Discount validation error:', err)
+        feedback.innerHTML = '<span class="warning">COULD NOT CHECK THIS CODE RIGHT NOW — TRY AGAIN.</span>'
       }
     })
 
@@ -1004,25 +1005,31 @@ All graphics, designs, logos, product names, and content appearing on this site 
 
         const errMsg = bodyErr || data?.error || error?.message || 'CHECKOUT INITIATION FAILED'
         console.error('Checkout session creation error:', errMsg)
-        let userMessage = errMsg
 
-        if (userMessage.includes('PANYEN_VID')) {
+        // LIS BLAN. Nou pati ak yon mesaj pwofesyonèl epi nou ranplase l SÈLMAN
+        // pou erè biznis nou konnen. Lojik la te ranvèse anvan (pati ak mesaj brit
+        // la, ranplase si rekonèt) — se konsa yon erè Stripe te rive parèt tou nen
+        // sou paj checkout la devan kliyan yo. Yon detay teknik pa gen dwa soti isit.
+        let userMessage = 'CHECKOUT IS TEMPORARILY UNAVAILABLE. YOUR CART IS SAVED — PLEASE TRY AGAIN SHORTLY, OR <a href="#contact">CONTACT US</a> IF THE PROBLEM CONTINUES.'
+
+        if (errMsg.includes('PANYEN_VID')) {
           userMessage = 'YOUR CART IS EMPTY.'
-        } else if (userMessage.includes('PWODWI_ENDISPONIB')) {
+        } else if (errMsg.includes('PWODWI_ENDISPONIB')) {
           userMessage = 'ONE OR MORE ITEMS IN YOUR CART ARE NO LONGER AVAILABLE.'
-        } else if (userMessage.includes('ESTOK_ENSIFIZAN')) {
-          userMessage = userMessage.replace('ESTOK_ENSIFIZAN:', 'OUT OF STOCK:').toUpperCase()
-        } else if (userMessage.includes('KANTITE_ENVALID')) {
+        } else if (errMsg.includes('ESTOK_ENSIFIZAN')) {
+          userMessage = errMsg.slice(errMsg.indexOf('ESTOK_ENSIFIZAN'))
+            .replace('ESTOK_ENSIFIZAN:', 'OUT OF STOCK:').toUpperCase()
+        } else if (errMsg.includes('KANTITE_ENVALID')) {
           userMessage = 'INVALID ITEM QUANTITY.'
-        } else if (userMessage.includes('GWOSE_MANKE')) {
+        } else if (errMsg.includes('GWOSE_MANKE')) {
           userMessage = 'PLEASE SELECT A SIZE FOR EVERY ITEM.'
-        } else if (userMessage.includes('RABE_ENVALID')) {
+        } else if (errMsg.includes('RABE_ENVALID')) {
           userMessage = 'DISCOUNT CODE IS INVALID.'
-        } else if (userMessage.includes('RABE_EKSPIRE')) {
+        } else if (errMsg.includes('RABE_EKSPIRE')) {
           userMessage = 'DISCOUNT CODE HAS EXPIRED.'
-        } else if (userMessage.includes('RABE_LIMIT_ATENN')) {
+        } else if (errMsg.includes('RABE_LIMIT_ATENN')) {
           userMessage = 'DISCOUNT CODE USAGE LIMIT REACHED.'
-        } else if (userMessage.includes('RABE_MINIMÒM_ENSIFIZAN')) {
+        } else if (errMsg.includes('RABE_MINIMÒM_ENSIFIZAN')) {
           userMessage = 'ORDER DOES NOT MEET MINIMUM FOR THIS DISCOUNT.'
         }
 
@@ -1048,7 +1055,8 @@ All graphics, designs, logos, product names, and content appearing on this site 
     } catch (err: any) {
       console.error('Order submission network error:', err)
       if (statusEl) {
-        statusEl.innerHTML = `<div class="warning">NETWORK TRANSMISSION FAILED: ${err?.message || 'PLEASE TRY AGAIN'}</div>`
+        // Detay teknik la rete nan konsòl la sèlman.
+        statusEl.innerHTML = '<div class="warning">WE COULD NOT REACH OUR CHECKOUT SERVICE. CHECK YOUR CONNECTION AND TRY AGAIN — YOUR CART IS SAVED.</div>'
       }
       if (btnEl) btnEl.disabled = false
     }

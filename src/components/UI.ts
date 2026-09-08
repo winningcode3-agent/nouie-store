@@ -248,7 +248,7 @@ export class UI {
 
       if (error && error.code !== '23505') {
         console.error('Newsletter signup error:', error)
-        submitBtn.textContent = 'ERROR'
+        submitBtn.textContent = 'TRY AGAIN'
         setTimeout(() => { submitBtn.textContent = 'JOIN'; submitBtn.disabled = false }, 2000)
         return
       }
