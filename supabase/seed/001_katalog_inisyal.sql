@@ -17,7 +17,7 @@ VALUES
   ('CAT01', 'SOLDIER THERMALS', 'SS26', 67.99,
    'Oversized thermal long-sleeve featuring hand-drawn soldier graphics. Premium cotton-blend construction with signature sleeve art.',
    ARRAY['S','M','L','XL','XXL'],
-   ARRAY['soldier_thermal_1.jpg','cat1_2.jpg','cat1_3.jpg','cat1_4.png'],
+   ARRAY['soldier_thermal_1.jpg','cat1_2.jpg','cat1_3.jpg','cat1_4.jpg'],
    42, '{"S":8,"M":10,"L":10,"XL":8,"XXL":6}'::jsonb,
    true, 'NOUIE-SS26-ST-01', 'NOUIE', 'CREAM', 'COTTON BLEND / THERMAL KNIT'),
 
@@ -31,7 +31,7 @@ VALUES
   ('CAT03', 'NOUIE JERSEY', 'SS26', 44.77,
    'Classic mesh jersey with breathable construction. Perfect for layering or standalone wear.',
    ARRAY['M','L','XL'],
-   ARRAY['cat3_1.png','cat3_2.png','cat3_3.png','cat3_4.png'],
+   ARRAY['cat3_1.jpg','cat3_2.jpg','cat3_3.jpg','cat3_4.jpg'],
    8, '{"M":3,"L":3,"XL":2}'::jsonb,
    true, 'NOUIE-SS26-NJ-03', 'NOUIE', 'BLACK', 'MESH / POLYESTER')
 

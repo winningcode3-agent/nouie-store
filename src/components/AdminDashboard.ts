@@ -2,6 +2,7 @@
 // Complete Otonomi Admin System (Faz 2)
 
 import { supabase } from '../lib/supabase'
+import { imageSrc } from '../lib/images'
 import { Auth } from '../lib/auth'
 import { settingsService } from '../lib/settings'
 import { renderSafeMarkdown } from '../lib/markdown'
@@ -619,7 +620,7 @@ export class AdminDashboard {
             <div id="imageGalleryPreview" class="admin-image-gallery">
               ${currentImages.map((img, idx) => `
                 <div class="admin-image-thumb-card" data-idx="${idx}">
-                  <img src="${img.startsWith('http') ? img : `/assets/${img}`}" alt="Thumb ${idx}">
+                  <img src="${imageSrc(img, 110)}" alt="Thumb ${idx}" loading="lazy">
                   <div class="thumb-actions">
                     ${idx === 0 ? '<span class="badge-primary">PRIMARY</span>' : `<button type="button" class="btn-make-primary" data-idx="${idx}">SET PRIMARY</button>`}
                     <button type="button" class="btn-remove-thumb" data-idx="${idx}">✕</button>
@@ -670,7 +671,7 @@ export class AdminDashboard {
             if (!gallery) return
             gallery.innerHTML = currentImages.map((img, idx) => `
         <div class="admin-image-thumb-card" data-idx="${idx}">
-          <img src="${img.startsWith('http') ? img : `/assets/${img}`}" alt="Thumb ${idx}">
+          <img src="${imageSrc(img, 110)}" alt="Thumb ${idx}" loading="lazy">
           <div class="thumb-actions">
             ${idx === 0 ? '<span class="badge-primary">PRIMARY</span>' : `<button type="button" class="btn-make-primary" data-idx="${idx}">SET PRIMARY</button>`}
             <button type="button" class="btn-remove-thumb" data-idx="${idx}">✕</button>
@@ -1020,7 +1021,7 @@ export class AdminDashboard {
       <tr data-id="${col.id}">
         <td><strong>${col.id}</strong><br><small>/${col.slug}</small></td>
         <td>${col.title}</td>
-        <td>${col.cover_image ? `<img src="${col.cover_image.startsWith('http') ? col.cover_image : `/assets/${col.cover_image}`}" class="thumb-mini">` : '—'}</td>
+        <td>${col.cover_image ? `<img src="${imageSrc(col.cover_image, 80)}" class="thumb-mini" loading="lazy">` : '—'}</td>
         <td>${col.sort_order}</td>
         <td>
           <span class="badge ${col.is_active ? 'badge-active' : 'badge-inactive'}">${col.is_active ? 'ACTIVE' : 'OFFLINE'}</span>
@@ -1330,9 +1331,9 @@ export class AdminDashboard {
 
             // Default local assets
             const defaultAssets = [
-                'soldier_thermal_1.jpg', 'cat1_1.jpg', 'cat1_2.jpg', 'cat1_3.jpg', 'cat1_4.png',
+                'soldier_thermal_1.jpg', 'cat1_1.jpg', 'cat1_2.jpg', 'cat1_3.jpg', 'cat1_4.jpg',
                 'cat2_1.jpg', 'cat2_2.jpg', 'cat2_3.jpg', 'cat2_4.jpg',
-                'cat3_1.png', 'cat3_2.png', 'cat3_3.png', 'cat3_4.png',
+                'cat3_1.jpg', 'cat3_2.jpg', 'cat3_3.jpg', 'cat3_4.jpg',
                 'home_cover_collage.jpg'
             ]
 
@@ -1357,7 +1358,7 @@ export class AdminDashboard {
             grid.innerHTML = allItems.map(item => `
         <div class="media-card">
           <div class="media-preview">
-            <img src="${item.url}" alt="${item.name}" loading="lazy">
+            <img src="${imageSrc(item.url, 180)}" alt="${item.name}" loading="lazy">
           </div>
           <div class="media-info">
             <span class="media-name" title="${item.name}">${item.name}</span>

@@ -7,6 +7,7 @@ import type { Product, Collection } from '../lib/types'
 import { SEO } from '../lib/seo'
 import { settingsService } from '../lib/settings'
 import { renderSafeMarkdown, escapeHtml } from '../lib/markdown'
+import { imageSrc, NO_IMAGE } from '../lib/images'
 
 export class Pages {
   private contentDiv: HTMLElement | null = null
@@ -336,18 +337,8 @@ All graphics, designs, logos, product names, and content appearing on this site 
       </div>
     `
   }
-  // Placeholder enliy: yon pwodwi san foto pa dwe kraze paj la.
-  private static readonly NO_IMAGE =
-    'data:image/svg+xml;utf8,' + encodeURIComponent(
-      '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 1200">' +
-      '<rect width="800" height="1200" fill="#1a1a1a"/>' +
-      '<text x="400" y="600" fill="#555" font-family="monospace" font-size="42" ' +
-      'text-anchor="middle" letter-spacing="6">NO IMAGE</text></svg>'
-    )
-
-  private getImageSrc(img?: string | null): string {
-    if (!img) return Pages.NO_IMAGE
-    return img.startsWith('http') ? img : `/assets/${img}`
+  private getImageSrc(img?: string | null, width = 700): string {
+    return img ? imageSrc(img, width) : NO_IMAGE
   }
 
   private async getProducts(): Promise<Product[]> {
@@ -473,7 +464,7 @@ All graphics, designs, logos, product names, and content appearing on this site 
       return `
         <div class="product-card" data-id="${cat.id}">
           <div class="product-card-image">
-            <img src="${this.getImageSrc(cat.images?.[0])}" alt="${cat.name} - ${cat.color || ''} ${cat.material || ''}" loading="lazy" width="800" height="1200">
+            <img src="${this.getImageSrc(cat.images?.[0], 420)}" alt="${cat.name} - ${cat.color || ''} ${cat.material || ''}" loading="lazy" width="800" height="1200">
             <div class="quick-add-icon">
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
             </div>
@@ -507,12 +498,12 @@ All graphics, designs, logos, product names, and content appearing on this site 
         <div class="product-layout">
           <div class="product-gallery">
             <div class="main-image">
-              <img id="mainProductImg" src="${this.getImageSrc(product.images?.[0])}" alt="${product.name} - ${product.color || ''} ${product.material || ''} Primary View" width="1200" height="1800" fetchpriority="high">
+              <img id="mainProductImg" src="${this.getImageSrc(product.images?.[0], 720)}" alt="${product.name} - ${product.color || ''} ${product.material || ''} Primary View" width="1200" height="1800" fetchpriority="high">
             </div>
             <div class="thumbnail-strip">
               ${(product.images || []).map((img: string, i: number) => `
                 <div class="thumbnail ${i === 0 ? 'active' : ''}" data-img="${img}">
-                  <img src="${this.getImageSrc(img)}" alt="${product.name} view ${i + 1}" width="200" height="300" loading="lazy">
+                  <img src="${this.getImageSrc(img, 120)}" alt="${product.name} view ${i + 1}" width="200" height="300" loading="lazy">
                 </div>
               `).join('')}
             </div>
@@ -579,7 +570,7 @@ All graphics, designs, logos, product names, and content appearing on this site 
         thumb.classList.add('active')
         const imgName = thumb.getAttribute('data-img')
         const mainImg = document.getElementById('mainProductImg') as HTMLImageElement
-        if (mainImg && imgName) mainImg.src = this.getImageSrc(imgName)
+        if (mainImg && imgName) mainImg.src = this.getImageSrc(imgName, 720)
       })
     })
 
@@ -688,7 +679,7 @@ All graphics, designs, logos, product names, and content appearing on this site 
     // Tout imaj yo soti nan katalòg la epi videyo yo simen ladan yo.
     const products = await this.getProducts()
     const shots = products.flatMap(p =>
-      (p.images || []).map(img => ({ img: this.getImageSrc(img), alt: p.name.trim() }))
+      (p.images || []).map(img => ({ img: this.getImageSrc(img, 420), alt: p.name.trim() }))
     )
 
     const tiles: Array<{ img?: string; video?: string; alt: string; wide?: boolean }> = []
@@ -729,7 +720,7 @@ All graphics, designs, logos, product names, and content appearing on this site 
         <div class="gallery-grid">
           ${data.map((col: Collection) => `
             <figure class="gallery-item">
-              <img src="${this.getImageSrc(col.cover_image)}" alt="${col.title}" loading="lazy">
+              <img src="${this.getImageSrc(col.cover_image, 420)}" alt="${col.title}" loading="lazy">
               <figcaption>${col.title}</figcaption>
             </figure>
           `).join('')}

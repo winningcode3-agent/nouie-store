@@ -10,7 +10,7 @@ export const catalogs: Product[] = [
         price: 67.99,
         description: 'Oversized thermal long-sleeve featuring hand-drawn soldier graphics. Premium cotton-blend construction with signature sleeve art.',
         sizes: ['S', 'M', 'L', 'XL', 'XXL'],
-        images: ['soldier_thermal_1.jpg', 'cat1_2.jpg', 'cat1_3.jpg', 'cat1_4.png'],
+        images: ['soldier_thermal_1.jpg', 'cat1_2.jpg', 'cat1_3.jpg', 'cat1_4.jpg'],
         stock_qty: 42,
         is_active: true,
         sku: 'NOUIE-SS26-ST-01',
@@ -40,7 +40,7 @@ export const catalogs: Product[] = [
         price: 44.77,
         description: 'Classic mesh jersey with breathable construction. Perfect for layering or standalone wear.',
         sizes: ['M', 'L', 'XL'],
-        images: ['cat3_1.png', 'cat3_2.png', 'cat3_3.png', 'cat3_4.png'],
+        images: ['cat3_1.jpg', 'cat3_2.jpg', 'cat3_3.jpg', 'cat3_4.jpg'],
         stock_qty: 8,
         is_active: true,
         sku: 'NOUIE-SS26-NJ-03',
@@ -59,7 +59,7 @@ export const technicalMetadata: Record<string, TechnicalMetadata> = {
 
 
 export const collectionImages = [
-    '/assets/cat1_1.jpg', '/assets/cat1_2.jpg', '/assets/cat1_3.jpg', '/assets/cat1_4.png',
+    '/assets/cat1_1.jpg', '/assets/cat1_2.jpg', '/assets/cat1_3.jpg', '/assets/cat1_4.jpg',
     '/assets/cat2_1.jpg', '/assets/cat2_2.jpg', '/assets/cat2_3.jpg', '/assets/cat2_4.jpg',
-    '/assets/cat3_1.png', '/assets/cat3_2.png', '/assets/cat3_3.png', '/assets/cat3_4.png'
+    '/assets/cat3_1.jpg', '/assets/cat3_2.jpg', '/assets/cat3_3.jpg', '/assets/cat3_4.jpg'
 ]
