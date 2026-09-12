@@ -3,6 +3,7 @@
 
 import { supabase } from '../lib/supabase'
 import { imageSrc } from '../lib/images'
+import { shrinkImage } from '../lib/imageUpload'
 import { Auth } from '../lib/auth'
 import { settingsService } from '../lib/settings'
 import { renderSafeMarkdown } from '../lib/markdown'
@@ -758,10 +759,16 @@ export class AdminDashboard {
 
     private async uploadProductImages(files: FileList): Promise<string[]> {
         const urls: string[] = []
-        for (const file of Array.from(files)) {
-            const ext = file.name.split('.').pop()
+        for (const original of Array.from(files)) {
+            // Foto telefòn yo fè 2-5 Mo ak 3000+ px delajè. Boutik la pa janm
+            // bezwen plis pase 1600 px, donk nou redui anvan telechajman an
+            // olye nou sere orijinal la pou toutan.
+            const file = await shrinkImage(original)
+            const ext = (file.name.split('.').pop() || 'jpg').toLowerCase()
             const path = `${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`
-            const { error } = await supabase.storage.from('product-images').upload(path, file)
+            const { error } = await supabase.storage
+                .from('product-images')
+                .upload(path, file, { contentType: file.type, upsert: false })
             if (error) throw error
             const { data } = supabase.storage.from('product-images').getPublicUrl(path)
             urls.push(data.publicUrl)
