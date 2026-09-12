@@ -21,6 +21,10 @@ export const NO_IMAGE = PLACEHOLDER
 /** `width` se lajè aparan an nan CSS px; nou mande 2× pou ekran retina. */
 export function imageSrc(img?: string | null, width = 700): string {
   if (!img) return PLACEHOLDER
+  // Yon chemen ki deja absoli (`/assets/x.jpg`) oswa yon data: URI pase jan l ye.
+  // San tchèk sa a, medyatèk admin nan — ki bati pwòp `/assets/` li — te resevwa
+  // yon dezyèm prefiks epi tout imaj yo te kase.
+  if (img.startsWith('/') || img.startsWith('data:')) return img
   if (!img.startsWith('http')) return `/assets/${img}`
   if (!img.includes('/storage/v1/object/public/')) return img
 
