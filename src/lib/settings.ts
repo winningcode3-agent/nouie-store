@@ -1,20 +1,22 @@
 // Store settings service with local cache & Supabase persistence
 
 import { supabase } from './supabase'
-import type { StoreSettings, ShippingSettings, TaxSettings, BusinessSettings, StoreGeneralSettings } from './types'
+import type { StoreSettings, ShippingSettings, TaxSettings, BusinessSettings, StoreGeneralSettings, PopupSettings } from './types'
 
 export const DEFAULT_SETTINGS: StoreSettings = {
     business: {
+        // Pa gen valè envante isit la: yon chan vid rete vid sou fakti a olye
+        // yon fo adrès (« INDUSTRIAL_ZONE_04 ») oswa yon imèl ki pa pou nou.
         name: 'NOUIE',
-        address_line1: '104 INDUSTRIAL_ZONE_04',
+        address_line1: '',
         address_line2: '',
-        city: 'NORTH_TERMINAL',
-        state: 'VOID',
-        zip: '00000',
+        city: '',
+        state: '',
+        zip: '',
         country: 'USA',
         phone: '',
-        email_support: 'support@nouie.com',
-        email_studio: 'studio@nouie.com'
+        email_support: '',
+        email_studio: ''
     },
     shipping: {
         standard: 10.00,
@@ -31,7 +33,18 @@ export const DEFAULT_SETTINGS: StoreSettings = {
     store: {
         maintenance: false,
         announcement: '',
-        featured_product: 'CAT04'
+        featured_product: 'CAT04',
+        returns_summary: 'All sales are final — no returns or exchanges. If your item arrives defective, damaged or wrong, contact us right away so we can make it right.'
+    },
+    popup: {
+        enabled: false,
+        title: 'GET 10% OFF',
+        text: 'Save on your first order and get email-only offers when you join.',
+        button: 'CONTINUE',
+        success_title: 'WELCOME TO NOUIE',
+        success_text: 'Use this code at checkout:',
+        code: '',
+        delay_seconds: 6
     }
 }
 
@@ -56,14 +69,19 @@ class SettingsService {
         return this.getSetting<StoreGeneralSettings>('store', DEFAULT_SETTINGS.store)
     }
 
+    async getPopup(): Promise<PopupSettings> {
+        return this.getSetting<PopupSettings>('popup', DEFAULT_SETTINGS.popup)
+    }
+
     async getAllSettings(): Promise<StoreSettings> {
-        const [business, shipping, tax, store] = await Promise.all([
+        const [business, shipping, tax, store, popup] = await Promise.all([
             this.getBusiness(),
             this.getShipping(),
             this.getTax(),
-            this.getStoreGeneral()
+            this.getStoreGeneral(),
+            this.getPopup()
         ])
-        return { business, shipping, tax, store }
+        return { business, shipping, tax, store, popup }
     }
 
     async getSetting<T>(key: keyof StoreSettings, fallback: T): Promise<T> {

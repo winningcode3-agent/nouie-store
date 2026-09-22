@@ -6,7 +6,7 @@ import { imageSrc } from '../lib/images'
 import { shrinkImage } from '../lib/imageUpload'
 import { Auth } from '../lib/auth'
 import { settingsService } from '../lib/settings'
-import { renderSafeMarkdown } from '../lib/markdown'
+import { renderSafeMarkdown, escapeHtml } from '../lib/markdown'
 import type { Product, Order, AdminUser, Discount, Collection, StoreSettings } from '../lib/types'
 
 export class AdminDashboard {
@@ -186,8 +186,8 @@ export class AdminDashboard {
           <tr data-id="${order.id}">
             <td class="admin-order-id">#${order.id.toString().slice(-6).toUpperCase()}</td>
             <td class="order-customer">
-              <div class="customer-name">${order.customer_name}</div>
-              <div class="customer-email">${order.customer_email}</div>
+              <div class="customer-name">${escapeHtml(order.customer_name || '')}</div>
+              <div class="customer-email">${escapeHtml(order.customer_email || '')}</div>
             </td>
             <td class="order-date">${new Date(order.created_at || Date.now()).toLocaleDateString()}</td>
             <td class="order-total">
@@ -854,6 +854,10 @@ export class AdminDashboard {
                 <input type="text" name="zip" value="${settings.business.zip || ''}">
               </div>
             </div>
+            <div class="form-group">
+              <label>PHONE (SHOWN ON INVOICES)</label>
+              <input type="tel" name="phone" value="${escapeHtml(settings.business.phone || '')}">
+            </div>
             <div class="form-row">
               <div class="form-group">
                 <label>SUPPORT EMAIL</label>
@@ -948,8 +952,61 @@ export class AdminDashboard {
               <label>GLOBAL ANNOUNCEMENT BANNER</label>
               <input type="text" name="announcement" placeholder="e.g. DROP 01 NOW LIVE / WORLDWIDE SHIPPING" value="${settings.store.announcement || ''}">
             </div>
+            <div class="form-group">
+              <label>RETURNS SUMMARY (PRODUCT PAGE — SHIPPING & RETURNS)</label>
+              <textarea name="returns_summary" rows="3">${escapeHtml(settings.store.returns_summary || '')}</textarea>
+            </div>
             <button type="submit" class="btn-submit-form">SAVE STORE STATUS</button>
             <div class="form-feedback" id="storeFeedback"></div>
+          </form>
+        </div>
+
+        <!-- 5. SIGNUP POPUP -->
+        <div class="settings-card">
+          <div class="settings-card-header">
+            <h3>🎁 SIGNUP POPUP & WELCOME DISCOUNT</h3>
+          </div>
+          <form id="popupSettingsForm" class="settings-form">
+            <div class="form-group checkbox-group">
+              <label class="switch">
+                <input type="checkbox" name="enabled" ${settings.popup.enabled ? 'checked' : ''}>
+                <span class="slider"></span>
+              </label>
+              <span class="switch-label">SHOW POPUP TO NEW VISITORS</span>
+            </div>
+            <div class="form-group">
+              <label>TITLE</label>
+              <input type="text" name="title" maxlength="60" value="${escapeHtml(settings.popup.title)}">
+            </div>
+            <div class="form-group">
+              <label>TEXT</label>
+              <textarea name="text" rows="2" maxlength="240">${escapeHtml(settings.popup.text)}</textarea>
+            </div>
+            <div class="form-row">
+              <div class="form-group">
+                <label>BUTTON</label>
+                <input type="text" name="button" maxlength="30" value="${escapeHtml(settings.popup.button)}">
+              </div>
+              <div class="form-group">
+                <label>DELAY (SECONDS)</label>
+                <input type="number" name="delay_seconds" min="0" max="120" value="${Number(settings.popup.delay_seconds) || 0}">
+              </div>
+            </div>
+            <div class="form-group">
+              <label>DISCOUNT CODE GIVEN AFTER SIGNUP</label>
+              <input type="text" name="code" maxlength="40" placeholder="e.g. WELCOME10" style="text-transform: uppercase;" value="${escapeHtml(settings.popup.code)}">
+              <span class="form-hint">The code must exist and be ACTIVE in the DISCOUNTS tab — that is where the % or $ amount is set.</span>
+            </div>
+            <div class="form-group">
+              <label>THANK-YOU TITLE</label>
+              <input type="text" name="success_title" maxlength="60" value="${escapeHtml(settings.popup.success_title)}">
+            </div>
+            <div class="form-group">
+              <label>THANK-YOU TEXT (SHOWN ABOVE THE CODE)</label>
+              <input type="text" name="success_text" maxlength="160" value="${escapeHtml(settings.popup.success_text)}">
+            </div>
+            <button type="submit" class="btn-submit-form">SAVE POPUP</button>
+            <div class="form-feedback" id="popupFeedback"></div>
           </form>
         </div>
       </div>
@@ -980,7 +1037,7 @@ export class AdminDashboard {
             state: fd.get('state'),
             zip: fd.get('zip'),
             country: 'USA',
-            phone: '',
+            phone: String(fd.get('phone') || '').trim(),
             email_support: fd.get('email_support'),
             email_studio: fd.get('email_studio')
         }))
@@ -999,10 +1056,48 @@ export class AdminDashboard {
             label: fd.get('label') || 'SALES TAX'
         }))
 
+        // `...settings.store`: fòm nan pa gen tout chan yo (featured_product
+        // pa egzanp). San sa, chak SAVE te efase yo nan baz la.
         handleSave('storeGeneralForm', 'storeFeedback', 'store', fd => ({
+            ...settings.store,
             maintenance: fd.get('maintenance') === 'on',
-            announcement: fd.get('announcement') || ''
+            announcement: fd.get('announcement') || '',
+            returns_summary: String(fd.get('returns_summary') || '').trim()
         }))
+
+        // Yon fenèt ki bay yon kòd ki pa mache se pi mal pase pa gen fenèt:
+        // apre SAVE, nou verifye kòd la nan DISCOUNTS epi nou avèti admin lan.
+        document.getElementById('popupSettingsForm')?.addEventListener('submit', async (e) => {
+            e.preventDefault()
+            const fb = document.getElementById('popupFeedback')!
+            fb.innerHTML = '<span class="loading">SAVING CONFIGURATION...</span>'
+            const fd = new FormData(e.target as HTMLFormElement)
+            const popup = {
+                enabled: fd.get('enabled') === 'on',
+                title: String(fd.get('title') || '').trim(),
+                text: String(fd.get('text') || '').trim(),
+                button: String(fd.get('button') || '').trim() || 'CONTINUE',
+                success_title: String(fd.get('success_title') || '').trim(),
+                success_text: String(fd.get('success_text') || '').trim(),
+                code: String(fd.get('code') || '').trim().toUpperCase(),
+                delay_seconds: Math.min(120, Math.max(0, parseInt(String(fd.get('delay_seconds')), 10) || 0))
+            }
+            const { error } = await settingsService.updateSetting('popup', popup)
+            if (error) {
+                fb.innerHTML = `<span class="error">SAVE FAILED: ${escapeHtml(error.message || String(error))}</span>`
+                return
+            }
+            let warning = ''
+            if (popup.enabled && !popup.code) {
+                warning = 'NO DISCOUNT CODE SET — VISITORS WILL SIGN UP BUT RECEIVE NO CODE.'
+            } else if (popup.code) {
+                const { data } = await supabase.from('discounts').select('code, active').ilike('code', popup.code).maybeSingle()
+                if (!data) warning = `CODE ${popup.code} IS NOT IN DISCOUNTS — CREATE IT OR CUSTOMERS WILL GET AN INVALID CODE.`
+                else if (!data.active) warning = `CODE ${popup.code} IS NOT ACTIVE — ACTIVATE IT IN DISCOUNTS.`
+            }
+            fb.innerHTML = '<span class="success">CONFIGURATION PERSISTED TO SUPABASE</span>'
+                + (warning ? `<br><span class="error">⚠ ${escapeHtml(warning)}</span>` : '')
+        })
     }
 
     // ==========================================
@@ -1780,11 +1875,11 @@ export class AdminDashboard {
         tbody.innerHTML = messages.map((msg: any) => `
       <tr>
         <td>${new Date(msg.created_at).toLocaleDateString()}</td>
-        <td>${msg.name}</td>
-        <td>${msg.email}</td>
-        <td>${msg.subject || '—'}</td>
-        <td class="message-cell">${msg.message}</td>
-        <td><a href="mailto:${msg.email}" class="btn-view-details">REPLY</a></td>
+        <td>${escapeHtml(msg.name || '')}</td>
+        <td>${escapeHtml(msg.email || '')}</td>
+        <td>${escapeHtml(msg.subject || '—')}</td>
+        <td class="message-cell">${escapeHtml(msg.message || '')}</td>
+        <td><a href="mailto:${encodeURIComponent(msg.email || '')}" class="btn-view-details">REPLY</a></td>
       </tr>
     `).join('')
     }
@@ -1802,11 +1897,14 @@ export class AdminDashboard {
           <thead>
             <tr>
               <th>EMAIL</th>
+              <th>FIRST NAME</th>
+              <th>BIRTHDAY</th>
+              <th>SOURCE</th>
               <th>SUBSCRIBED</th>
             </tr>
           </thead>
           <tbody id="subscribersTableBody">
-            <tr><td colspan="2" class="table-loading">LOADING_SUBSCRIBERS...</td></tr>
+            <tr><td colspan="5" class="table-loading">LOADING_SUBSCRIBERS...</td></tr>
           </tbody>
         </table>
       </div>
@@ -1821,21 +1919,27 @@ export class AdminDashboard {
             .order('created_at', { ascending: false })
 
         if (error || !subscribers || subscribers.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="2" class="table-empty">NO_SUBSCRIBERS_FOUND</td></tr>'
+            tbody.innerHTML = '<tr><td colspan="5" class="table-empty">NO_SUBSCRIBERS_FOUND</td></tr>'
             document.getElementById('exportCsvBtn')?.setAttribute('disabled', 'true')
             return
         }
 
         tbody.innerHTML = subscribers.map((sub: any) => `
       <tr>
-        <td>${sub.email}</td>
+        <td>${escapeHtml(sub.email || '')}</td>
+        <td>${escapeHtml(sub.first_name || '—')}</td>
+        <td>${escapeHtml(sub.birthday || '—')}</td>
+        <td>${escapeHtml(sub.source || 'footer')}</td>
         <td>${new Date(sub.created_at).toLocaleDateString()}</td>
       </tr>
     `).join('')
 
         document.getElementById('exportCsvBtn')?.addEventListener('click', () => {
-            const rows = [['email', 'subscribed_at'], ...subscribers.map((s: any) => [s.email, s.created_at])]
-            const csv = rows.map(r => r.map((cell: string) => `"${String(cell).replace(/"/g, '""')}"`).join(',')).join('\n')
+            const rows = [['email', 'first_name', 'birthday', 'source', 'subscribed_at'], ...subscribers.map((s: any) => [s.email, s.first_name || '', s.birthday || '', s.source || 'footer', s.created_at])]
+            // Yon selil ki kòmanse ak = + - @ vin yon fòmil nan Excel/Sheets —
+            // non yon vizitè ekri pa dwe ka egzekite anyen sou òdinatè admin lan.
+            const cellSafe = (v: string) => /^[=+\-@\t\r]/.test(v) ? `'${v}` : v
+            const csv = rows.map(r => r.map((cell: string) => `"${cellSafe(String(cell)).replace(/"/g, '""')}"`).join(',')).join('\n')
             const blob = new Blob([csv], { type: 'text/csv' })
             const url = URL.createObjectURL(blob)
             const a = document.createElement('a')
@@ -1888,16 +1992,21 @@ export class AdminDashboard {
         <div class="invoice-addresses">
           <div class="address-box">
             <label>FROM:</label>
-            <div>${business.name || 'NOUIE'} INDUSTRIAL UNIT</div>
-            <div>${business.address_line1 || '104 INDUSTRIAL_ZONE_04'}</div>
-            <div>${business.city || 'NORTH_TERMINAL'}, ${business.state || 'VOID'} ${business.zip || ''}</div>
-            <div>${business.email_support || 'support@nouie.com'}</div>
+            <!-- Sèlman sa ki vrèman antre nan STORE_CONFIGURATION. Anvan, yon
+                 adrès envante (« INDUSTRIAL_ZONE_04, NORTH_TERMINAL, VOID ») te
+                 parèt sou fakti yo lè chan yo vid. -->
+            <div>${escapeHtml(business.name || 'NOUIE')}</div>
+            ${business.address_line1 ? `<div>${escapeHtml(business.address_line1)}</div>` : ''}
+            ${business.address_line2 ? `<div>${escapeHtml(business.address_line2)}</div>` : ''}
+            ${business.city || business.state || business.zip ? `<div>${escapeHtml([business.city, [business.state, business.zip].filter(Boolean).join(' ')].filter(Boolean).join(', '))}</div>` : ''}
+            ${business.phone ? `<div>${escapeHtml(business.phone)}</div>` : ''}
+            ${business.email_support ? `<div>${escapeHtml(business.email_support)}</div>` : ''}
           </div>
           <div class="address-box">
             <label>TO:</label>
-            <div>${order.customer_name}</div>
-            <div>${order.shipping_address}</div>
-            <div>${order.customer_phone}</div>
+            <div>${escapeHtml(order.customer_name || '')}</div>
+            <div>${escapeHtml(order.shipping_address || '')}</div>
+            <div>${escapeHtml(order.customer_phone || '')}</div>
           </div>
         </div>
         
@@ -1913,7 +2022,7 @@ export class AdminDashboard {
           <tbody>
             ${(order.items || []).map((item: any) => `
               <tr>
-                <td>${item.name} (${item.size})</td>
+                <td>${escapeHtml(String(item.name || ''))} (${escapeHtml(String(item.size || ''))})</td>
                 <td>${item.qty}</td>
                 <td>$${Number(item.price).toFixed(2)}</td>
                 <td>$${(item.price * item.qty).toFixed(2)}</td>
@@ -1955,19 +2064,14 @@ export class AdminDashboard {
       </div>
       
       <div class="invoice-actions">
-        <button class="btn-email-invoice" id="sendEmail">SEND_TO_CUSTOMER_EMAIL</button>
+        <!-- Anvan: bouton sa a te afiche « INVOICE SUCCESSFULLY TRANSMITTED »
+             san voye anyen ditou. Kounye a li louvri aplikasyon imèl admin lan,
+             adrese bay kliyan an — onèt jiskaske nou gen yon vrè sèvè imèl. -->
+        <a class="btn-email-invoice" href="mailto:${encodeURIComponent(order.customer_email || '')}?subject=${encodeURIComponent(`${business.name || 'NOUIE'} — ORDER #${order.id}`)}">EMAIL CUSTOMER</a>
         <button class="btn-print-invoice" onclick="window.print()">PRINT_HARDCOPY</button>
       </div>
-      <div id="emailFeedback"></div>
     `
 
-        document.getElementById('sendEmail')?.addEventListener('click', () => {
-            const feedback = document.getElementById('emailFeedback')!
-            feedback.innerHTML = `<div class="success-msg">TRANSMITTING DATA TO: ${order.customer_email}...</div>`
-            setTimeout(() => {
-                feedback.innerHTML = `<div class="success-msg">INVOICE SUCCESSFULLY TRANSMITTED TO CUSTOMER EMAIL.</div>`
-            }, 1200)
-        })
     }
 
     // ==========================================

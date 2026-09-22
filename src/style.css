@@ -4079,3 +4079,231 @@ body.has-announcement .page-container {
 body.has-announcement .page-container.page-home {
   padding-top: calc(80px + var(--announcement-h, 36px));
 }
+
+/* ==========================================================================
+   Fenèt enskripsyon « GET 10% OFF » — tèks yo soti nan admin (reglaj popup)
+   ========================================================================== */
+body.signup-popup-open {
+  overflow: hidden;
+}
+
+.signup-popup-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 10000; /* anlè banyè cookie a (9999) */
+  background: rgba(0, 0, 0, 0.55);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  animation: signupFade 0.25s ease;
+}
+
+@keyframes signupFade {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.signup-popup {
+  position: relative;
+  width: 100%;
+  max-width: 440px;
+  max-height: calc(100dvh - 32px);
+  overflow-y: auto;
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  border: 1px solid var(--border-strong);
+}
+
+.signup-popup-body {
+  padding: 2.75rem 2rem 2rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  text-align: center;
+}
+
+.signup-popup-body h2 {
+  margin: 0;
+  font-size: clamp(1.8rem, 7vw, 2.4rem);
+  font-weight: 900;
+  letter-spacing: -0.02em;
+  line-height: 1;
+  text-transform: uppercase;
+}
+
+.signup-popup-text {
+  margin: 0;
+  color: var(--text-secondary);
+  font-size: 0.95rem;
+  line-height: 1.5;
+}
+
+.signup-popup-close {
+  position: absolute;
+  top: 6px;
+  right: 8px;
+  width: 44px;
+  height: 44px;
+  border: 0;
+  background: transparent;
+  font-size: 2rem;
+  line-height: 1;
+  cursor: pointer;
+  color: var(--text-primary);
+}
+
+.signup-popup-form {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  margin-top: 0.5rem;
+}
+
+.signup-popup-form input {
+  box-sizing: border-box;
+  width: 100%;
+  padding: 0.95rem 1rem;
+  border: 1px solid var(--border-strong);
+  background: #fff;
+  font: inherit;
+  font-size: 16px; /* < 16px = iOS zoom sou fokis */
+  letter-spacing: 0.04em;
+  border-radius: 0;
+}
+
+.signup-popup-form input:focus {
+  outline: 2px solid var(--text-primary);
+  outline-offset: -1px;
+}
+
+.signup-popup-legal {
+  margin: 0.25rem 0 0;
+  font-size: 0.72rem;
+  line-height: 1.5;
+  color: var(--text-secondary);
+  text-align: left;
+}
+
+.signup-popup-legal a {
+  color: var(--text-primary);
+  text-decoration: underline;
+}
+
+.signup-popup-submit {
+  box-sizing: border-box;
+  width: 100%;
+  padding: 1rem;
+  border: 0;
+  background: var(--text-primary);
+  color: #fff;
+  font: inherit;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+
+.signup-popup-submit:hover {
+  background: var(--accent-red);
+}
+
+.signup-popup-submit:disabled {
+  opacity: 0.6;
+  cursor: wait;
+}
+
+.signup-popup-error {
+  margin: 0;
+  min-height: 1em;
+  color: var(--accent-red);
+  font-size: 0.8rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+}
+
+.signup-popup-code {
+  box-sizing: border-box;
+  padding: 1rem;
+  border: 2px dashed var(--text-primary);
+  font-size: 1.6rem;
+  font-weight: 900;
+  letter-spacing: 0.15em;
+  user-select: all;
+}
+
+.signup-popup-link {
+  border: 0;
+  background: transparent;
+  font: inherit;
+  font-size: 0.8rem;
+  letter-spacing: 0.1em;
+  text-decoration: underline;
+  cursor: pointer;
+  color: var(--text-primary);
+  padding: 0.5rem;
+}
+
+@media (max-width: 480px) {
+  .signup-popup-body {
+    padding: 2.5rem 1.25rem 1.5rem;
+  }
+}
+
+/* SHIPPING & RETURNS anba chak pwodwi */
+.product-accordion {
+  border-top: 1px solid var(--border-strong);
+  border-bottom: 1px solid var(--border-strong);
+}
+
+.product-accordion summary {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1.1rem 0;
+  font-size: 0.8rem;
+  font-weight: 800;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  cursor: pointer;
+  list-style: none;
+}
+
+.product-accordion summary::-webkit-details-marker {
+  display: none;
+}
+
+.product-accordion summary::after {
+  content: '+';
+  font-size: 1.2rem;
+  font-weight: 400;
+}
+
+.product-accordion[open] summary::after {
+  content: '−';
+}
+
+.product-accordion-body {
+  padding-bottom: 1.1rem;
+  font-size: 0.9rem;
+  line-height: 1.65;
+  color: var(--text-secondary);
+}
+
+.product-accordion-body p {
+  margin: 0 0 0.75rem;
+}
+
+.product-accordion-body p:last-child {
+  margin-bottom: 0;
+}
+
+.product-accordion-body strong {
+  color: var(--text-primary);
+}
+
+.product-accordion-body a {
+  color: var(--text-primary);
+  text-decoration: underline;
+  white-space: nowrap;
+}

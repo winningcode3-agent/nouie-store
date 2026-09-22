@@ -3,6 +3,7 @@
 import { cartStore } from '../lib/store'
 import { supabase } from '../lib/supabase'
 import { settingsService } from '../lib/settings'
+import { escapeHtml } from '../lib/markdown'
 
 export class UI {
   private cartDrawerOpen = false
@@ -162,6 +163,9 @@ export class UI {
     // Anons global la (admin -> STORE MODE & ANNOUNCEMENTS)
     void this.renderAnnouncement()
 
+    // Fenèt « GET 10% OFF » (admin -> SIGNUP POPUP & WELCOME DISCOUNT)
+    void this.scheduleSignupPopup()
+
     // Event Listeners
     this.addEventListeners(cartDrawer, menuDrawer)
   }
@@ -192,6 +196,152 @@ export class UI {
     sync()
     window.addEventListener('resize', sync)
     document.body.classList.add('has-announcement')
+  }
+
+  // Fenèt enskripsyon ak rabè. Tout tèks yo soti nan reglaj `popup` la pou
+  // Franckley ka chanje yo san touche kòd. Li parèt yon sèl fwa pa navigatè:
+  // lè vizitè a fèmen l oswa li enskri, nou pa janm deranje l ankò.
+  private async scheduleSignupPopup(): Promise<void> {
+    const MAK = 'nouie_popup'
+    try {
+      if (localStorage.getItem(MAK)) return
+    } catch { return }
+
+    let popup
+    try {
+      popup = await settingsService.getPopup()
+    } catch { return }
+    if (!popup.enabled || !popup.title) return
+
+    // Pa sou paj kote vizitè a ap fè yon bagay serye (peye, konekte, admin).
+    const pajTranki = () => {
+      const h = window.location.hash.replace('#', '')
+      return !/^(admin|checkout|order|modpas)/.test(h)
+    }
+
+    const louvri = () => {
+      if (document.getElementById('signupPopup')) return
+      try { if (localStorage.getItem(MAK)) return } catch { return }
+      this.openSignupPopup(popup!, MAK)
+    }
+
+    setTimeout(() => {
+      if (pajTranki()) return louvri()
+      // Vizitè a sou checkout/admin lè tan an rive: nou tann li retounen sou
+      // yon paj trankil olye nou abandone nèt.
+      const tann = () => {
+        if (!pajTranki()) return
+        window.removeEventListener('hashchange', tann)
+        setTimeout(() => { if (pajTranki()) louvri() }, 1500)
+      }
+      window.addEventListener('hashchange', tann)
+    }, Math.max(0, Number(popup.delay_seconds) || 0) * 1000)
+  }
+
+  private openSignupPopup(popup: import('../lib/types').PopupSettings, MAK: string): void {
+    const overlay = document.createElement('div')
+    overlay.className = 'signup-popup-overlay'
+    overlay.id = 'signupPopup'
+    overlay.innerHTML = `
+      <div class="signup-popup" role="dialog" aria-modal="true" aria-labelledby="signupPopupTitle">
+        <button type="button" class="signup-popup-close" aria-label="Close">×</button>
+        <div class="signup-popup-body">
+          <h2 id="signupPopupTitle">${escapeHtml(popup.title)}</h2>
+          ${popup.text ? `<p class="signup-popup-text">${escapeHtml(popup.text)}</p>` : ''}
+          <form class="signup-popup-form" novalidate>
+            <input type="text" name="first_name" placeholder="FIRST NAME" autocomplete="given-name" maxlength="60">
+            <input type="email" name="email" placeholder="EMAIL" autocomplete="email" required maxlength="254">
+            <input type="text" name="birthday" placeholder="BIRTHDAY MM/DD (OPTIONAL)" inputmode="numeric" maxlength="5">
+            <p class="signup-popup-legal">By signing up you agree to receive marketing emails from NOUIE. You can unsubscribe at any time. <a href="#privacy">Privacy Policy</a> &amp; <a href="#terms">Terms</a>.</p>
+            <button type="submit" class="signup-popup-submit">${escapeHtml(popup.button || 'CONTINUE')}</button>
+            <p class="signup-popup-error" role="alert"></p>
+          </form>
+        </div>
+      </div>
+    `
+    document.body.appendChild(overlay)
+    document.body.classList.add('signup-popup-open')
+
+    const close = () => {
+      try { if (!localStorage.getItem(MAK)) localStorage.setItem(MAK, 'closed') } catch { /* mòd prive */ }
+      overlay.remove()
+      document.body.classList.remove('signup-popup-open')
+      document.removeEventListener('keydown', onKey)
+    }
+    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') close() }
+    document.addEventListener('keydown', onKey)
+    overlay.querySelector('.signup-popup-close')?.addEventListener('click', close)
+    overlay.addEventListener('click', (e) => { if (e.target === overlay) close() })
+    // Lyen Privacy/Terms yo: fèmen fenèt la pou paj la vizib.
+    overlay.querySelectorAll('.signup-popup-legal a').forEach(a => a.addEventListener('click', close))
+
+    const form = overlay.querySelector('.signup-popup-form') as HTMLFormElement
+    const bday = form.elements.namedItem('birthday') as HTMLInputElement
+    // 0415 → 04/15 pandan moun nan ap tape.
+    bday.addEventListener('input', () => {
+      const d = bday.value.replace(/\D/g, '').slice(0, 4)
+      bday.value = d.length > 2 ? `${d.slice(0, 2)}/${d.slice(2)}` : d
+    })
+
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault()
+      const errEl = form.querySelector('.signup-popup-error') as HTMLElement
+      const btn = form.querySelector('.signup-popup-submit') as HTMLButtonElement
+      const fd = new FormData(form)
+      const email = String(fd.get('email') || '').trim().toLowerCase()
+      const first_name = String(fd.get('first_name') || '').trim() || null
+      const birthday = String(fd.get('birthday') || '').trim() || null
+
+      errEl.textContent = ''
+      if (!/^[^\s@<>"]+@[^\s@<>"]+\.[^\s@<>"]+$/.test(email)) {
+        errEl.textContent = 'PLEASE ENTER A VALID EMAIL.'
+        return
+      }
+      if (birthday && !/^(0[1-9]|1[0-2])\/(0[1-9]|[12][0-9]|3[01])$/.test(birthday)) {
+        errEl.textContent = 'BIRTHDAY FORMAT: MM/DD (E.G. 04/15).'
+        return
+      }
+
+      btn.disabled = true
+      btn.textContent = '...'
+      const { error } = await supabase.from('newsletter_subscribers').insert({ email, first_name, birthday, source: 'popup' })
+      // 23505 = imèl la deja enskri: nou ba l kòd la kanmenm.
+      if (error && error.code !== '23505') {
+        console.error('Popup signup error:', error)
+        btn.disabled = false
+        btn.textContent = popup.button || 'CONTINUE'
+        errEl.textContent = 'SOMETHING WENT WRONG — PLEASE TRY AGAIN.'
+        return
+      }
+
+      try {
+        localStorage.setItem(MAK, 'joined')
+        if (popup.code) localStorage.setItem('nouie_welcome_code', popup.code)
+      } catch { /* mòd prive */ }
+
+      const body = overlay.querySelector('.signup-popup-body') as HTMLElement
+      body.innerHTML = `
+        <h2>${escapeHtml(popup.success_title || 'THANK YOU')}</h2>
+        ${popup.code ? `
+          ${popup.success_text ? `<p class="signup-popup-text">${escapeHtml(popup.success_text)}</p>` : ''}
+          <div class="signup-popup-code">${escapeHtml(popup.code)}</div>
+          <button type="button" class="signup-popup-submit" id="signupCopyCode">COPY CODE</button>
+        ` : `<p class="signup-popup-text">YOU ARE ON THE LIST.</p>`}
+        <button type="button" class="signup-popup-link" id="signupShop">CONTINUE SHOPPING</button>
+      `
+      body.querySelector('#signupCopyCode')?.addEventListener('click', async (ev) => {
+        const b = ev.currentTarget as HTMLButtonElement
+        try { await navigator.clipboard.writeText(popup.code) } catch { /* pa grav: kòd la vizib */ }
+        b.textContent = 'COPIED'
+      })
+      body.querySelector('#signupShop')?.addEventListener('click', close)
+    })
+
+    // Fokis otomatik sèlman sou òdinatè: sou telefòn li ta louvri klavye a
+    // sou vizitè a anvan li menm deside si li enterese.
+    if (window.matchMedia('(hover: hover)').matches) {
+      (form.elements.namedItem('first_name') as HTMLInputElement)?.focus({ preventScroll: true })
+    }
   }
 
   private renderCookieBanner(): void {

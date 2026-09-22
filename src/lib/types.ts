@@ -121,6 +121,21 @@ export interface StoreGeneralSettings {
     /** Pwodwi kouvèti akèy la pwomote. Bouton BUY NOW sou kouvèti a mennen sou
      *  paj li. Lè yon nouvo drop soti, se yon sèl valè pou chanje. */
     featured_product?: string
+    /** Kout rezime retou a anba chak pwodwi (SHIPPING & RETURNS). */
+    returns_summary?: string
+}
+
+/** Fenèt « GET 10% OFF » la. Tout tèks yo modifyab nan admin → STORE_CONFIGURATION.
+ *  Kòd la dwe egziste epi aktif nan DISCOUNTS pou kliyan an ka sèvi l. */
+export interface PopupSettings {
+    enabled: boolean
+    title: string
+    text: string
+    button: string
+    success_title: string
+    success_text: string
+    code: string
+    delay_seconds: number
 }
 
 export interface StoreSettings {
@@ -128,6 +143,7 @@ export interface StoreSettings {
     shipping: ShippingSettings
     tax: TaxSettings
     store: StoreGeneralSettings
+    popup: PopupSettings
 }
 
 export interface Collection {

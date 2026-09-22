@@ -162,8 +162,11 @@ All graphics, designs, logos, product names, and content appearing on this site 
 
   private async renderContact(contentDiv: HTMLElement): Promise<void> {
     const business = await settingsService.getBusiness()
-    const supportEmail = business.email_support || 'support@nouie.com'
-    const studioEmail = business.email_studio || 'studio@nouie.com'
+    // Pa gen imèl pa defo: `support@nouie.com` pa t pou nou (domèn nan se
+    // no-uie.com) — kliyan yo t ap ekri nan vid. Kat la kache jiskaske
+    // STORE_CONFIGURATION gen yon vrè adrès; fòm kontak la toujou mache.
+    const supportEmail = (business.email_support || '').trim()
+    const studioEmail = (business.email_studio || '').trim()
 
     contentDiv.innerHTML = `
       <div class="legal-page">
@@ -174,17 +177,16 @@ All graphics, designs, logos, product names, and content appearing on this site 
         
         <div class="contact-layout">
           <div class="contact-info-grid">
-            <div class="contact-card">
+            ${supportEmail ? `<div class="contact-card">
               <h3>CUSTOMER SUPPORT</h3>
               <p>FOR ORDER INQUIRIES, DAMAGED ITEMS, OR GENERAL QUESTIONS:</p>
-              <a href="mailto:${supportEmail}" class="contact-link">${supportEmail.toUpperCase()}</a>
-            </div>
-            
-            <div class="contact-card">
+              <a href="mailto:${encodeURIComponent(supportEmail)}" class="contact-link">${escapeHtml(supportEmail.toUpperCase())}</a>
+            </div>` : ''}
+            ${studioEmail ? `<div class="contact-card">
               <h3>WHOLESALE & STUDIO</h3>
               <p>FOR BUSINESS INQUIRIES OR PARTNERSHIPS:</p>
-              <a href="mailto:${studioEmail}" class="contact-link">${studioEmail.toUpperCase()}</a>
-            </div>
+              <a href="mailto:${encodeURIComponent(studioEmail)}" class="contact-link">${escapeHtml(studioEmail.toUpperCase())}</a>
+            </div>` : ''}
           </div>
 
           <form class="contact-form" id="contactForm">
@@ -629,12 +631,41 @@ All graphics, designs, logos, product names, and content appearing on this site 
             </div>
             
             <div class="cart-feedback" id="cartFeedback"></div>
+
+            <!-- Louvri pa defo: « all sales are final » dwe vizib ANVAN kliyan
+                 an achte, pa kache nan yon paj legal. -->
+            <details class="product-accordion" open>
+              <summary>SHIPPING &amp; RETURNS</summary>
+              <div class="product-accordion-body" id="shippingReturnsBody">
+                <p class="loading-state">LOADING...</p>
+              </div>
+            </details>
           </div>
         </div>
       </div>
     `
 
+    void this.fillShippingReturns()
     this.initProductDetailHandlers(product)
+  }
+
+  // Menm chif ak checkout la (STORE_CONFIGURATION → SHIPPING) — si Franckley
+  // chanje yon pri, paj pwodwi a swiv otomatikman.
+  private async fillShippingReturns(): Promise<void> {
+    const [ship, store] = await Promise.all([
+      settingsService.getShipping(),
+      settingsService.getStoreGeneral(),
+    ])
+    const el = document.getElementById('shippingReturnsBody')
+    if (!el) return
+    const usd = (n: number) => `$${Number(n).toFixed(2)}`
+    const free = Number(ship.free_threshold) > 0
+      ? ` Free standard shipping on U.S. orders over ${usd(ship.free_threshold)}.`
+      : ''
+    el.innerHTML = `
+      <p><strong>Shipping.</strong> Standard (${escapeHtml(String(ship.standard_days))} business days) ${usd(ship.standard)} · Express (${escapeHtml(String(ship.express_days))} business days) ${usd(ship.express)}.${free} <a href="#shipping">Shipping policy</a></p>
+      ${store.returns_summary ? `<p><strong>Returns.</strong> ${escapeHtml(store.returns_summary)} <a href="#returns">Refund policy</a></p>` : ''}
+    `
   }
 
   private initProductDetailHandlers(product: Product): void {
@@ -1014,6 +1045,14 @@ All graphics, designs, logos, product names, and content appearing on this site 
         renderTotals()
       })
     })
+
+    // Kòd fenèt enskripsyon an: nou mete l nan bwat la pou kliyan an pa bezwen
+    // sonje l. Li toujou peze APPLY li menm — nou pa aplike anyen san l konnen.
+    try {
+      const welcome = localStorage.getItem('nouie_welcome_code')
+      const codeBox = document.getElementById('discountCodeInput') as HTMLInputElement | null
+      if (welcome && codeBox && !codeBox.value) codeBox.value = welcome
+    } catch { /* mòd prive */ }
 
     // Discount code apply handler
     document.getElementById('applyDiscountBtn')?.addEventListener('click', async () => {
