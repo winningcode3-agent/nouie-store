@@ -879,9 +879,18 @@ body {
   gap: 2rem;
 }
 
+/* Paj koleksyon an pa te gen okenn limit lajè, epi griy la te fikse sou 2
+   kolòn. Rezilta: plis ekran an gwo, plis kat yo gonfle — sou yon 1440 chak
+   imaj te mezire 665 × 831 px, sou yon pi gwo ekran li te depase 900 px.
+   Kounye a se gwosè kat la ki fiks, se kantite kolòn ki ajiste. */
+.collection-page {
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
 .collection-grid {
   display: grid;
-  grid-template-columns: repeat(2, 1fr);
+  grid-template-columns: repeat(auto-fill, minmax(min(300px, 100%), 1fr));
   gap: 30px;
 }
 
@@ -2866,6 +2875,11 @@ input:checked+.slider:before {
     row-gap: 32px;
   }
 
+  /* Sou telefòn nou kenbe 2 kolòn — yon sèl pwodwi pa liy fè paj la twò long. */
+  .collection-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
   /* Make typography more readable on small screens */
   .section-header h2 {
     font-size: 20px;
@@ -3810,9 +3824,11 @@ body.has-cookie-banner .footer {
 /* ============================================
    Galeri NOUIE (LOOKBOOK). ARCHIVE fonn ladan l.
    ============================================ */
+/* Menm rezon ak .collection-grid: 3 kolòn fiks te fè chak foto gonfle sou gwo
+   ekran. Nou fikse gwosè dyapo a epi nou kite kantite kolòn nan respire. */
 .gallery-grid {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(auto-fill, minmax(min(300px, 100%), 1fr));
   gap: 12px;
 }
 
