@@ -24,15 +24,31 @@ class CartStore {
         return this.items.reduce((sum, item) => sum + item.qty, 0)
     }
 
-    addItem(id: string, name: string, size: string, price: number): void {
+    addItem(id: string, name: string, size: string, price: number, image?: string): void {
         const existing = this.items.find(item => item.id === id && item.size === size)
         if (existing) {
             existing.qty++
+            if (image && !existing.image) existing.image = image
         } else {
-            this.items.push({ id, name, size, price, qty: 1 })
+            this.items.push({ id, name, size, price, qty: 1, ...(image ? { image } : {}) })
         }
         this.save()
         this.notify()
+    }
+
+    /** Panye ki te sere anvan miniati yo egziste: nou ranpli foto ki manke yo. */
+    fillImages(images: Record<string, string>): void {
+        let changed = false
+        for (const item of this.items) {
+            if (!item.image && images[item.id]) {
+                item.image = images[item.id]
+                changed = true
+            }
+        }
+        if (changed) {
+            this.save()
+            this.notify()
+        }
     }
 
     removeItem(index: number): void {

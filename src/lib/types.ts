@@ -52,6 +52,9 @@ export interface CartItem {
     size: string
     price: number
     qty: number
+    /** Premye foto pwodwi a — pou miniati nan panye a ak checkout la sèlman.
+     *  Sèvè a pa li l: place_order rebati atik yo depi tab products la. */
+    image?: string
 }
 
 export type OrderStatus = 'pending' | 'paid' | 'payment_review' | 'processing' | 'shipped' | 'delivered' | 'cancelled'

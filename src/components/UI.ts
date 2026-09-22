@@ -4,8 +4,11 @@ import { cartStore } from '../lib/store'
 import { supabase } from '../lib/supabase'
 import { settingsService } from '../lib/settings'
 import { escapeHtml } from '../lib/markdown'
+import { imageSrc } from '../lib/images'
 
 export class UI {
+  private fotoAPChaje = false
+
   private cartDrawerOpen = false
   private menuOpen = false
   private onNavigate: (page: string) => void
@@ -509,11 +512,25 @@ export class UI {
     const total = cartStore.getTotal()
     const totalQty = cartStore.getTotalQuantity()
 
+    // Panye ki te sere anvan miniati yo: nou chèche foto ki manke yo yon fwa.
+    const sanFoto = [...new Set(items.filter(i => !i.image).map(i => i.id))]
+    if (sanFoto.length && !this.fotoAPChaje) {
+      this.fotoAPChaje = true
+      void supabase.from('products').select('id, images').in('id', sanFoto).then(({ data }) => {
+        const map: Record<string, string> = {}
+        for (const p of data || []) if (p.images?.[0]) map[p.id] = p.images[0]
+        cartStore.fillImages(map)
+      })
+    }
+
     cartItemsEl.innerHTML = items.map((item, index) => `
       <div class="cart-item">
+        <a href="#product-${encodeURIComponent(item.id)}" class="cart-item-thumb" aria-label="${escapeHtml(item.name)}">
+          <img src="${imageSrc(item.image, 160)}" alt="" width="72" height="90" loading="lazy">
+        </a>
         <div class="cart-item-info">
-          <div class="cart-item-name">${item.name}</div>
-          <div class="cart-item-details">SIZE: ${item.size}</div>
+          <div class="cart-item-name">${escapeHtml(item.name)}</div>
+          <div class="cart-item-details">SIZE: ${escapeHtml(item.size)}</div>
           <div class="cart-item-qty">
             <button class="qty-btn qty-decrease" data-id="${item.id}" data-size="${item.size}">&minus;</button>
             <span class="qty-value">${item.qty}</span>
@@ -527,6 +544,11 @@ export class UI {
 
     if (cartTotalEl) cartTotalEl.textContent = `$${total.toFixed(2)} USD`
     if (cartCountEl) cartCountEl.textContent = String(totalQty)
+
+    // Klike sou miniati a mennen sou paj pwodwi a — tiwa a fèmen pou l vizib.
+    cartItemsEl.querySelectorAll('.cart-item-thumb').forEach(a => {
+      a.addEventListener('click', () => this.toggleCart(false))
+    })
 
     // Add remove handlers
     cartItemsEl.querySelectorAll('.cart-item-remove').forEach(btn => {

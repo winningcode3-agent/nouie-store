@@ -458,7 +458,7 @@ All graphics, designs, logos, product names, and content appearing on this site 
         return
       }
 
-      cartStore.addItem(featured.id, featured.name, available, featured.price)
+      cartStore.addItem(featured.id, featured.name, available, featured.price, featured.images?.[0])
       window.location.hash = '#checkout'
     })
 
@@ -711,7 +711,7 @@ All graphics, designs, logos, product names, and content appearing on this site 
         this.showFeedback('PLEASE SELECT A SIZE', 'error')
         return
       }
-      cartStore.addItem(product.id, product.name, selectedSize, product.price)
+      cartStore.addItem(product.id, product.name, selectedSize, product.price, product.images?.[0])
       this.showFeedback('ADDED TO CART', 'success')
     })
 
@@ -721,7 +721,7 @@ All graphics, designs, logos, product names, and content appearing on this site 
         this.showFeedback('PLEASE SELECT A SIZE', 'error')
         return
       }
-      cartStore.addItem(product.id, product.name, selectedSize, product.price)
+      cartStore.addItem(product.id, product.name, selectedSize, product.price, product.images?.[0])
       window.location.hash = '#checkout'
     })
   }
@@ -994,8 +994,11 @@ All graphics, designs, logos, product names, and content appearing on this site 
             <div class="order-items">
               ${items.map(item => `
                 <div class="order-item">
-                  <div class="order-item-name">${item.name}</div>
-                  <div class="order-item-details">SIZE: ${item.size} × ${item.qty}</div>
+                  <img class="order-item-thumb" src="${this.getImageSrc(item.image, 160)}" alt="" width="56" height="70" loading="lazy">
+                  <div class="order-item-text">
+                    <div class="order-item-name">${escapeHtml(item.name)}</div>
+                    <div class="order-item-details">SIZE: ${escapeHtml(item.size)} × ${item.qty}</div>
+                  </div>
                   <div class="order-item-price">$${(item.price * item.qty).toFixed(2)}</div>
                 </div>
               `).join('')}
