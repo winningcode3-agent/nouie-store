@@ -80,14 +80,34 @@ serve(async (req: Request) => {
     redirectTo: `${siteUrl}/`,
   })
 
+  // Si imèl la pa pati, nou pa kanpe la. Sèvè imèl Supabase pa defo a limite a
+  // kèk imèl pa èdtan — yon bagay ki frape nou 22 sept. Nan ka sa a nou jenere
+  // lyen an epi nou remèt li bay admin ki mande a, ki ka voye l li menm
+  // (WhatsApp, mesaj). Lyen an se yon kle: li louvri kont lan yon sèl fwa.
+  let lyen: string | null = null
+
   if (inviteErr) {
     const msg = String(inviteErr.message || "").toLowerCase()
     const dejaGenKont = msg.includes("already been registered") || msg.includes("already exists")
-    if (!dejaGenKont) {
-      console.error("Echèk envitasyon:", inviteErr.message)
-      return json({ error: "ECHÈK_ENVITASYON", detay: inviteErr.message }, 500)
+
+    if (dejaGenKont) {
+      envite = false
+    } else {
+      console.error("Echèk imèl envitasyon:", inviteErr.message)
+      envite = false
+
+      const { data: lyenData, error: lyenErr } = await admin.auth.admin.generateLink({
+        type: "invite",
+        email,
+        options: { redirectTo: `${siteUrl}/` },
+      })
+
+      if (lyenErr || !lyenData?.properties?.action_link) {
+        return json({ error: "ECHÈK_ENVITASYON", detay: inviteErr.message }, 500)
+      }
+
+      lyen = lyenData.properties.action_link
     }
-    envite = false
   }
 
   // 4. Otorizasyon an. Si sa a echwe apre imèl la pati, moun nan ap gen yon kont
@@ -102,8 +122,11 @@ serve(async (req: Request) => {
     ok: true,
     email,
     envitasyon_voye: envite,
+    lyen,
     mesaj: envite
       ? "Envitasyon voye. Moun nan ap chwazi modpas pa l sou lyen an."
-      : "Moun nan te gen yon kont deja — li otorize kounye a, li konekte ak modpas li.",
+      : lyen
+        ? "Imèl la pa t ka pati. Kopye lyen an epi voye l ba moun nan ou menm."
+        : "Moun nan te gen yon kont deja — li otorize kounye a, li konekte ak modpas li.",
   })
 })

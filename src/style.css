@@ -3273,6 +3273,18 @@ body.has-cookie-banner .footer {
   color: #888;
 }
 
+.invite-link-box {
+  display: block;
+  width: 100%;
+  margin: 10px 0;
+  padding: 10px;
+  font: 11px/1.5 monospace;
+  color: var(--text-primary);
+  background: var(--bg-primary);
+  border: 1px solid var(--border-light);
+  resize: vertical;
+}
+
 .form-hint {
   display: block;
   margin-top: 6px;

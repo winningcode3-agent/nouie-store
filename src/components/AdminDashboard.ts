@@ -1536,9 +1536,33 @@ export class AdminDashboard {
                 }
                 fb.innerHTML = `<span class="error">${mesaj[kodErè] || 'INVITE FAILED — TRY AGAIN.'}</span>`
             } else {
-                fb.innerHTML = (data as any)?.envitasyon_voye === false
-                    ? `<span class="success">${email.toUpperCase()} AUTHORIZED — THEY ALREADY HAD AN ACCOUNT.</span>`
-                    : `<span class="success">INVITE SENT TO ${email.toUpperCase()} — THEY WILL SET THEIR OWN PASSWORD.</span>`
+                const rep = data as any
+                if (rep?.lyen) {
+                    // Imèl la pa t ka pati (limit sèvè imèl la, pa egzanp). Nou pa
+                    // fè konprann tout bagay bon: nou bay lyen an pou admin lan
+                    // voye l li menm.
+                    fb.innerHTML = `
+                      <span class="warning">EMAIL COULD NOT BE SENT. COPY THIS LINK AND SEND IT TO ${email.toUpperCase()} YOURSELF:</span>
+                      <textarea class="invite-link-box" readonly rows="3">${rep.lyen}</textarea>
+                      <button type="button" class="btn-submit-form" id="copyInviteLink">COPY LINK</button>
+                      <span class="form-hint">This link opens the account once. Send it only to ${email}.</span>
+                    `
+                    document.getElementById('copyInviteLink')?.addEventListener('click', async () => {
+                        const box = fb.querySelector('.invite-link-box') as HTMLTextAreaElement
+                        box.select()
+                        try {
+                            await navigator.clipboard.writeText(box.value)
+                        } catch {
+                            document.execCommand('copy')
+                        }
+                        const btn = document.getElementById('copyInviteLink')!
+                        btn.textContent = 'COPIED'
+                    })
+                } else {
+                    fb.innerHTML = rep?.envitasyon_voye === false
+                        ? `<span class="success">${email.toUpperCase()} AUTHORIZED — THEY ALREADY HAD AN ACCOUNT.</span>`
+                        : `<span class="success">INVITE SENT TO ${email.toUpperCase()} — THEY WILL SET THEIR OWN PASSWORD.</span>`
+                }
                 emailInput.value = ''
                 await refreshAdmins()
             }
