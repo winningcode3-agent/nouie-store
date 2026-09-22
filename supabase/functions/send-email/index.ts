@@ -17,20 +17,29 @@ const supabaseUrl = Deno.env.get("SUPABASE_URL") || ""
 const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") || ""
 const siteUrl = (Deno.env.get("SITE_URL") || "https://no-uie.com").replace(/\/+$/, "")
 
-const corsHeaders = {
-  "Access-Control-Allow-Origin": siteUrl,
+// Sit la + panèl la sou machin lokal (vite dev). CORS pa yon baryè sekirite
+// isit la — se jeton admin lan ki pwoteje fonksyon an; sa a jis kite
+// navigatè a pase repons lan bay paj ki mande l.
+const origin = (req: Request) => {
+  const o = req.headers.get("Origin") || ""
+  return /^http:\/\/(localhost|127\.0\.0\.1):\d+$/.test(o) ? o : siteUrl
+}
+
+const corsFor = (req: Request) => ({
+  "Access-Control-Allow-Origin": origin(req),
   "Vary": "Origin",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
   "Access-Control-Allow-Methods": "POST, OPTIONS",
-}
-
-const json = (body: unknown, status = 200) =>
-  new Response(JSON.stringify(body), {
-    status,
-    headers: { ...corsHeaders, "Content-Type": "application/json" },
-  })
+})
 
 serve(async (req: Request) => {
+  const corsHeaders = corsFor(req)
+  const json = (body: unknown, status = 200) =>
+    new Response(JSON.stringify(body), {
+      status,
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    })
+
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders })
   if (req.method !== "POST") return json({ error: "METÒD_ENVALID" }, 405)
 

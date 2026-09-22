@@ -136,6 +136,9 @@ export class AdminDashboard {
             DESTINATÈ_ENVALID: 'THE CUSTOMER EMAIL ADDRESS IS INVALID.',
             REPONS_VID: 'WRITE A REPLY FIRST.',
         }
+        // Pa gen kò repons ditou = demann lan pa janm rive sou sèvè a (rezo,
+        // CORS) — pa konfonn li ak yon echèk Hostinger.
+        if (!kod && !raw) return `COULD NOT REACH THE EMAIL SERVICE${error?.message ? ` (${error.message})` : ''}.`
         return mesaj[kod] || `EMAIL FAILED${kod ? `: ${kod}` : ''}`
     }
 
