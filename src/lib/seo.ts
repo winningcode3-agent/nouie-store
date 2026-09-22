@@ -76,10 +76,8 @@ export class SEO {
                 'hasMerchantReturnPolicy': {
                     '@type': 'MerchantReturnPolicy',
                     'applicableCountry': 'US',
-                    'returnPolicyCategory': 'https://schema.org/MerchantReturnFiniteReturnPeriod',
-                    'merchantReturnDays': 14,
-                    'returnMethod': 'https://schema.org/ReturnByMail',
-                    'returnFees': 'https://schema.org/ReturnFeesCustomerPaying'
+                    // Tout vant final (politik Franckley, 22 sept 2026)
+                    'returnPolicyCategory': 'https://schema.org/MerchantReturnNotPermitted'
                 },
                 'shippingDetails': {
                     '@type': 'OfferShippingDetails',

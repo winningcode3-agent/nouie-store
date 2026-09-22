@@ -1252,7 +1252,7 @@ export class AdminDashboard {
       </header>
       <div class="page-editor-tabs">
         <button class="btn-tab active" data-slug="shipping">SHIPPING POLICY</button>
-        <button class="btn-tab" data-slug="returns">RETURNS & EXCHANGES</button>
+        <button class="btn-tab" data-slug="returns">REFUND POLICY</button>
         <button class="btn-tab" data-slug="privacy">PRIVACY POLICY</button>
         <button class="btn-tab" data-slug="terms">TERMS OF SERVICE</button>
       </div>

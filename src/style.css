@@ -1620,10 +1620,26 @@ body {
   border: 1px solid var(--border-light);
 }
 
+/* Bann foto ki glise: yon foto pa ekran, li kole sou plas li apre chak glisad. */
+.main-image {
+  display: flex;
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  overscroll-behavior-x: contain;
+  scrollbar-width: none;
+}
+
+.main-image::-webkit-scrollbar {
+  display: none;
+}
+
 .main-image img {
+  flex: 0 0 100%;
   width: 100%;
   height: 100%;
   object-fit: cover;
+  scroll-snap-align: start;
+  scroll-snap-stop: always;
 }
 
 .thumbnail-strip {
@@ -1819,7 +1835,9 @@ body {
 
 @media (max-width: 768px) {
   .product-layout {
-    grid-template-columns: 1fr;
+    /* minmax(0, …): san li, kolòn nan te louvri jiska 452px sou yon ekran
+       390px (bann ti kad yo) — foto a ak tèks la te koupe adwat. */
+    grid-template-columns: minmax(0, 1fr);
     gap: 2rem;
   }
 

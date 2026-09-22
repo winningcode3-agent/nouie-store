@@ -117,20 +117,15 @@ When your order has shipped, you will receive an email notification from us whic
   }
 
   private async renderReturns(contentDiv: HTMLElement): Promise<void> {
-    const defaultBody = `# RETURN POLICY
-We want you to be completely satisfied with your purchase. If you are not satisfied, you may return your item(s) within 14 days of delivery for an exchange or store credit.
+    // Menm tèks ak `pages.returns` nan baz la (migrasyon 20260922000016) —
+    // sèvi sèlman si baz la pa reponn.
+    const defaultBody = `**NO RETURNS OR EXCHANGES. ALL SALES ARE FINAL!!!!**
 
-**PLEASE NOTE:** All returns must be in their original condition—unworn, unwashed, and with all tags attached. Items that do not meet these criteria will be denied.
+## DAMAGES AND ISSUES
 
-# EXCHANGES
-We offer exchanges for different sizes of the same item, subject to availability. If the desired size is out of stock, a store credit will be issued.
+Please inspect your order upon reception and contact us immediately if the item is defective, damaged or if you receive the wrong item, so that we can evaluate the issue and make it right.`
 
-# RETURN PROCESS
-1. Email our support desk with your order number and the item(s) you wish to return.
-2. Once approved, you will receive return instructions and address.
-3. Pack your item(s) securely and ship using a trackable method.`
-
-    await this.renderLegalPage(contentDiv, 'returns', 'RETURNS & EXCHANGES', defaultBody)
+    await this.renderLegalPage(contentDiv, 'returns', 'REFUND POLICY', defaultBody)
   }
 
   private async renderPrivacy(contentDiv: HTMLElement): Promise<void> {
@@ -181,7 +176,7 @@ All graphics, designs, logos, product names, and content appearing on this site 
           <div class="contact-info-grid">
             <div class="contact-card">
               <h3>CUSTOMER SUPPORT</h3>
-              <p>FOR ORDER INQUIRIES, RETURNS, OR GENERAL QUESTIONS:</p>
+              <p>FOR ORDER INQUIRIES, DAMAGED ITEMS, OR GENERAL QUESTIONS:</p>
               <a href="mailto:${supportEmail}" class="contact-link">${supportEmail.toUpperCase()}</a>
             </div>
             
@@ -209,7 +204,7 @@ All graphics, designs, logos, product names, and content appearing on this site 
               <select id="contactSubject" required>
                 <option value="" disabled selected>SELECT A REASON</option>
                 <option value="order">ORDER STATUS</option>
-                <option value="return">RETURNS & EXCHANGES</option>
+                <option value="return">DAMAGED OR WRONG ITEM</option>
                 <option value="product">PRODUCT INFORMATION</option>
                 <option value="other">OTHER</option>
               </select>
@@ -308,7 +303,7 @@ All graphics, designs, logos, product names, and content appearing on this site 
         this.renderShipping(contentDiv)
         break
       case 'returns':
-        SEO.updateMeta('RETURNS', 'Return and exchange information for NOUIE products.')
+        SEO.updateMeta('REFUND POLICY', 'All NOUIE sales are final. Contact us if your item arrives defective, damaged or incorrect.')
         this.renderReturns(contentDiv)
         break
       case 'privacy':
@@ -574,12 +569,17 @@ All graphics, designs, logos, product names, and content appearing on this site 
         
         <div class="product-layout">
           <div class="product-gallery">
-            <div class="main-image">
-              <img id="mainProductImg" src="${this.getImageSrc(product.images?.[0], 720)}" alt="${product.name} - ${product.color || ''} ${product.material || ''} Primary View" width="1200" height="1800" fetchpriority="high" style="object-position: ${pozisyonImaj(product.image_position)}">
+            <!-- Tout foto yo youn akote lòt nan yon bann ki glise (scroll-snap).
+                 Anvan se te yon sèl <img> ki chanje sèlman lè yo klike yon
+                 ti kad — sou telefòn, glise dwèt sou foto a pa t fè anyen. -->
+            <div class="main-image" id="mainProductTrack">
+              ${(product.images?.length ? product.images : [undefined]).map((img: string | undefined, i: number) => `
+                <img src="${this.getImageSrc(img, 720)}" alt="${product.name} - ${product.color || ''} ${product.material || ''} ${i === 0 ? 'Primary View' : `View ${i + 1}`}" width="1200" height="1800" ${i === 0 ? 'fetchpriority="high"' : 'loading="lazy"'} style="object-position: ${pozisyonImaj(product.image_position)}">
+              `).join('')}
             </div>
             <div class="thumbnail-strip">
               ${(product.images || []).map((img: string, i: number) => `
-                <div class="thumbnail ${i === 0 ? 'active' : ''}" data-img="${img}">
+                <div class="thumbnail ${i === 0 ? 'active' : ''}" data-index="${i}">
                   <img src="${this.getImageSrc(img, 120)}" alt="${product.name} view ${i + 1}" width="200" height="300" loading="lazy">
                 </div>
               `).join('')}
@@ -640,16 +640,26 @@ All graphics, designs, logos, product names, and content appearing on this site 
   private initProductDetailHandlers(product: Product): void {
     const contentDiv = this.getContentDiv()
 
-    // Thumbnail click
-    contentDiv.querySelectorAll('.thumbnail').forEach(thumb => {
+    // Galri: glise sou foto a OSWA klike yon ti kad — de chemen yo rete
+    // senkronize. Se navigatè a ki jere glisad la (scroll-snap), donk li swiv
+    // dwèt la ak momantòm natif iOS olye yon animasyon JS.
+    const track = document.getElementById('mainProductTrack')
+    const thumbs = Array.from(contentDiv.querySelectorAll<HTMLElement>('.thumbnail'))
+    const makeActive = (i: number) => {
+      thumbs.forEach((t, j) => t.classList.toggle('active', j === i))
+    }
+
+    thumbs.forEach(thumb => {
       thumb.addEventListener('click', () => {
-        contentDiv.querySelectorAll('.thumbnail').forEach(t => t.classList.remove('active'))
-        thumb.classList.add('active')
-        const imgName = thumb.getAttribute('data-img')
-        const mainImg = document.getElementById('mainProductImg') as HTMLImageElement
-        if (mainImg && imgName) mainImg.src = this.getImageSrc(imgName, 720)
+        const i = Number(thumb.dataset.index) || 0
+        makeActive(i)
+        track?.scrollTo({ left: i * track.clientWidth, behavior: 'smooth' })
       })
     })
+
+    track?.addEventListener('scroll', () => {
+      makeActive(Math.round(track.scrollLeft / Math.max(1, track.clientWidth)))
+    }, { passive: true })
 
     // Size selector
     let selectedSize = ''

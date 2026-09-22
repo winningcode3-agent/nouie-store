@@ -84,7 +84,7 @@ export class UI {
           <h4>SUPPORT</h4>
           <div class="footer-nav">
             <a href="#shipping" class="footer-link">Shipping</a>
-            <a href="#returns" class="footer-link">Returns</a>
+            <a href="#returns" class="footer-link">Refund Policy</a>
             <a href="#privacy" class="footer-link">Privacy Policy</a>
             <a href="#terms" class="footer-link">Terms of Service</a>
             <a href="#contact" class="footer-link">Contact</a>
