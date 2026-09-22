@@ -162,7 +162,16 @@ export function buildReply(msg: any, body: string, biz: Business): Mail {
     `<div style="font-size:15px;line-height:1.6;white-space:pre-wrap;margin:0 0 24px;">${esc(body)}</div>`,
     `<div style="border-left:3px solid #ddd;padding:4px 0 4px 14px;color:#666;font-size:13px;line-height:1.5;white-space:pre-wrap;">${esc(quoted)}</div>`,
   ].join("")
-  const subject = msg.subject ? `Re: ${String(msg.subject)}` : `Re: your message to ${biz.name || "NOUIE"}`
+  // Fòm kontak la sere valè teknik la (order/return/product/other) — kliyan
+  // an dwe wè yon sijè moun ka li, pa « Re: other ».
+  const SIJE: Record<string, string> = {
+    order: "Your order",
+    return: "Your damaged or wrong item",
+    product: "Product information",
+    other: `Your message to ${biz.name || "NOUIE"}`,
+  }
+  const raw = String(msg.subject || "").trim()
+  const subject = `Re: ${SIJE[raw.toLowerCase()] || raw || `Your message to ${biz.name || "NOUIE"}`}`
   return {
     to: msg.email,
     subject,
