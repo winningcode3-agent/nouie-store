@@ -8,8 +8,10 @@ import { SMTPClient } from "https://deno.land/x/denomailer@1.6.0/mod.ts"
 //
 // Sekrè yo (supabase secrets set):
 //   SMTP_HOST=smtp.hostinger.com  SMTP_PORT=465
-//   SMTP_USER=support@no-uie.com  SMTP_PASS=<modpas bwat la>
-//   MAIL_FROM_NAME=NOUIE          (opsyonèl)
+//   SMTP_USER=franckley@no-uie.com   (bwat ki konekte a)
+//   SMTP_PASS=<modpas bwat la>
+//   MAIL_FROM=support@no-uie.com     (alyas kliyan an wè; opsyonèl)
+//   MAIL_FROM_NAME=NOUIE             (opsyonèl)
 
 export interface Mail {
   to: string
@@ -26,6 +28,7 @@ const cfg = () => ({
   user: (Deno.env.get("SMTP_USER") || "").trim(),
   pass: Deno.env.get("SMTP_PASS") || "",
   fromName: (Deno.env.get("MAIL_FROM_NAME") || "NOUIE").trim(),
+  fromAddr: (Deno.env.get("MAIL_FROM") || Deno.env.get("SMTP_USER") || "").trim(),
 })
 
 export const smtpConfigured = () => {
@@ -43,6 +46,16 @@ export async function sendMail(mail: Mail): Promise<MailResult> {
   if (/[\r\n,;<>\s]/.test(to) || !/^[^@]+@[^@]+\.[^@]+$/.test(to)) return { ok: false, error: "DESTINATÈ_ENVALID" }
   const subject = mail.subject.replace(/[\r\n]+/g, " ").slice(0, 200)
 
+  // Kliyan an wè alyas la (support@). Si Hostinger refize voye sou non
+  // alyas la, nou reseye ak bwat ki konekte a olye kliyan an pa resevwa anyen.
+  const first = await sendOnce(c, c.fromAddr, to, subject, mail)
+  if (first.ok || c.fromAddr.toLowerCase() === c.user.toLowerCase()) return first
+  console.warn(`Voye sou non ${c.fromAddr} echwe (${first.error}) — reseye ak ${c.user}`)
+  const second = await sendOnce(c, c.user, to, subject, mail)
+  return second.ok ? second : first
+}
+
+async function sendOnce(c: ReturnType<typeof cfg>, from: string, to: string, subject: string, mail: Mail): Promise<MailResult> {
   const client = new SMTPClient({
     connection: {
       hostname: c.host,
@@ -55,9 +68,9 @@ export async function sendMail(mail: Mail): Promise<MailResult> {
 
   try {
     await client.send({
-      from: `${c.fromName} <${c.user}>`,
+      from: `${c.fromName} <${from}>`,
       to,
-      replyTo: c.user,
+      replyTo: c.fromAddr,
       subject,
       content: mail.text,
       html: mail.html,
