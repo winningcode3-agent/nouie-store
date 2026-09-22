@@ -609,6 +609,19 @@ export class AdminDashboard {
             </div>
           </div>
           <div class="form-group">
+            <label>IMAGE CROP (WHICH PART STAYS VISIBLE)</label>
+            <select name="image_position">
+              ${[
+                        ['center', 'CENTER — default'],
+                        ['top', 'TOP — tall phone photos, keeps heads'],
+                        ['upper', 'UPPER THIRD'],
+                        ['lower', 'LOWER THIRD'],
+                        ['bottom', 'BOTTOM — keeps shoes / hem'],
+                    ].map(([v, t]) => `<option value="${v}" ${(existing?.image_position || 'center') === v ? 'selected' : ''}>${t}</option>`).join('')}
+            </select>
+            <small class="form-hint">Kad katalòg la se 4/5. Yon foto ki pi wo pase sa ap koupe — chwazi ki pati ki dwe rete.</small>
+          </div>
+          <div class="form-group">
             <label>DESCRIPTION</label>
             <textarea name="description" required placeholder="Unit technical specifications...">${existing?.description || ''}</textarea>
           </div>
@@ -750,7 +763,8 @@ export class AdminDashboard {
                 sku: formData.get('sku') as string,
                 brand: 'NOUIE',
                 color: formData.get('color') as string,
-                material: formData.get('material') as string
+                material: formData.get('material') as string,
+                image_position: (formData.get('image_position') as string) || 'center'
             }
 
             const { error } = isEdit

@@ -4,6 +4,7 @@ import { supabase } from '../lib/supabase'
 import { cartStore } from '../lib/store'
 import { catalogs } from '../lib/data'
 import type { Product, Collection } from '../lib/types'
+import { pozisyonImaj } from '../lib/types'
 import { SEO } from '../lib/seo'
 import { settingsService } from '../lib/settings'
 import { renderSafeMarkdown, escapeHtml } from '../lib/markdown'
@@ -464,7 +465,7 @@ All graphics, designs, logos, product names, and content appearing on this site 
       return `
         <div class="product-card" data-id="${cat.id}">
           <div class="product-card-image">
-            <img src="${this.getImageSrc(cat.images?.[0], 420)}" alt="${cat.name} - ${cat.color || ''} ${cat.material || ''}" loading="lazy" width="800" height="1200">
+            <img src="${this.getImageSrc(cat.images?.[0], 420)}" alt="${cat.name} - ${cat.color || ''} ${cat.material || ''}" loading="lazy" width="800" height="1200" style="object-position: ${pozisyonImaj(cat.image_position)}">
             <div class="quick-add-icon">
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
             </div>
@@ -498,7 +499,7 @@ All graphics, designs, logos, product names, and content appearing on this site 
         <div class="product-layout">
           <div class="product-gallery">
             <div class="main-image">
-              <img id="mainProductImg" src="${this.getImageSrc(product.images?.[0], 720)}" alt="${product.name} - ${product.color || ''} ${product.material || ''} Primary View" width="1200" height="1800" fetchpriority="high">
+              <img id="mainProductImg" src="${this.getImageSrc(product.images?.[0], 720)}" alt="${product.name} - ${product.color || ''} ${product.material || ''} Primary View" width="1200" height="1800" fetchpriority="high" style="object-position: ${pozisyonImaj(product.image_position)}">
             </div>
             <div class="thumbnail-strip">
               ${(product.images || []).map((img: string, i: number) => `

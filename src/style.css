@@ -3184,6 +3184,14 @@ body.has-cookie-banner .footer {
   color: #888;
 }
 
+.form-hint {
+  display: block;
+  margin-top: 6px;
+  font-size: 10px;
+  line-height: 1.5;
+  color: #888;
+}
+
 /* Prèv peman — soti nan orders.paid_at, ki pa ka chanje. Li rete vizib kèlkeswa
    estati livrezon an, konsa admin lan pa janm ap gade yon kòmand peye epi kwè
    li pa peye. */

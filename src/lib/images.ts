@@ -30,6 +30,11 @@ export function imageSrc(img?: string | null, width = 700): string {
 
   const target = Math.min(Math.round(width * 2), 1600)
   const quality = target <= 800 ? 62 : 70
+  // `resize=contain` OBLIGATWA. Ak `width` pou kont li, Supabase pa redui foto
+  // a — li KOUPE l: yon foto 2268 × 4032 tounen 840 × 4032 (ratio 0.21), donk
+  // tout sa ki sou kote yo disparèt. Se sa ki t ap koupe moun yo sou kat NO UIE
+  // TENNIS DRESS la. Ak `contain` nou jwenn 840 × 1493 — vrè fòma a — epi
+  // fichye a desann 312 Ko → 174 Ko.
   return img.replace('/object/public/', '/render/image/public/') +
-    `?width=${target}&quality=${quality}`
+    `?width=${target}&quality=${quality}&resize=contain`
 }

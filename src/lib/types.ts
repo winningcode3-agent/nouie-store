@@ -15,7 +15,25 @@ export interface Product {
     brand: string
     color: string
     material?: string
+    /** Jeton kadraj — gade POZISYON_IMAJ. Foto yo pa gen menm fòma, donk chak
+     *  pwodwi di ki pati nan foto a ki dwe rete vizib nan kad la. */
+    image_position?: ImagePosition
     variants?: ProductVariant[]
+}
+
+export type ImagePosition = 'center' | 'top' | 'upper' | 'lower' | 'bottom'
+
+/** Jeton → valè CSS. Nou pa janm mete tèks brit nan yon atribi `style`. */
+export const POZISYON_IMAJ: Record<ImagePosition, string> = {
+    center: 'center center',
+    top: 'center top',
+    upper: 'center 25%',
+    lower: 'center 75%',
+    bottom: 'center bottom',
+}
+
+export function pozisyonImaj(v?: string | null): string {
+    return POZISYON_IMAJ[(v as ImagePosition)] || POZISYON_IMAJ.center
 }
 
 export interface ProductVariant {
