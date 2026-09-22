@@ -20,6 +20,20 @@ class App {
   private handleRouting(): void {
     const route = () => {
       const hash = window.location.hash.replace('#', '') || 'home'
+
+      // Moun ki fèk klike sou yon lyen envitasyon dwe chwazi modpas li anvan
+      // tout lòt bagay. Mak la poze nan index.html, anvan supabase-js netwaye
+      // URL la.
+      let mandeModpas = false
+      try {
+        mandeModpas = sessionStorage.getItem('nouie_mande_modpas') === '1'
+      } catch (e) { /* mòd prive */ }
+
+      if (mandeModpas && hash !== 'modpas') {
+        window.location.hash = '#modpas'
+        return
+      }
+
       this.navigate(hash)
     }
 

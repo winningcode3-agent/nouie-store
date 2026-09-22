@@ -299,6 +299,10 @@ All graphics, designs, logos, product names, and content appearing on this site 
         SEO.updateMeta('ADMIN', 'NOUIE internal management system.')
         await this.renderAdmin(contentDiv)
         break
+      case 'modpas':
+        SEO.updateMeta('SET PASSWORD', 'NOUIE internal access.')
+        await this.renderSetPassword(contentDiv)
+        break
       case 'shipping':
         SEO.updateMeta('SHIPPING', 'Domestic and international shipping policies.')
         this.renderShipping(contentDiv)
@@ -1202,6 +1206,95 @@ All graphics, designs, logos, product names, and content appearing on this site 
     `
   }
 
+
+  // Ekran « chwazi modpas » pou moun ki rive via yon lyen envitasyon. San li,
+  // yon nouvo admin konekte yon sèl fwa via lyen an epi li pa janm gen yon
+  // modpas pou pwochen fwa a.
+  private async renderSetPassword(contentDiv: HTMLElement): Promise<void> {
+    contentDiv.innerHTML = `
+      <div class="legal-page">
+        <div class="legal-header">
+          <h1>SET YOUR PASSWORD</h1>
+          <p class="legal-loading">VERIFYING INVITE LINK...</p>
+        </div>
+      </div>
+    `
+
+    const { data: { user } } = await supabase.auth.getUser()
+
+    if (!user) {
+      contentDiv.innerHTML = `
+        <div class="legal-page">
+          <div class="legal-header">
+            <h1>LINK EXPIRED</h1>
+            <p>THIS INVITE LINK IS NO LONGER VALID.</p>
+          </div>
+          <div class="legal-content">
+            <p>Invite links expire after a short time. Ask the store owner to send you a new one from the admin panel.</p>
+          </div>
+        </div>
+      `
+      try { sessionStorage.removeItem('nouie_mande_modpas') } catch (e) { /* mòd prive */ }
+      return
+    }
+
+    contentDiv.innerHTML = `
+      <div class="legal-page">
+        <div class="legal-header">
+          <h1>SET YOUR PASSWORD</h1>
+          <p>${escapeHtml(user.email || '')}</p>
+        </div>
+        <div class="legal-content">
+          <form id="setPasswordForm" class="settings-form">
+            <div class="form-group">
+              <label>NEW PASSWORD</label>
+              <input type="password" id="newPass" autocomplete="new-password" required minlength="10" placeholder="AT LEAST 10 CHARACTERS">
+            </div>
+            <div class="form-group">
+              <label>CONFIRM PASSWORD</label>
+              <input type="password" id="newPass2" autocomplete="new-password" required minlength="10" placeholder="TYPE IT AGAIN">
+            </div>
+            <button type="submit" class="btn-submit-form" id="setPassBtn">SAVE PASSWORD</button>
+            <div id="setPassFeedback"></div>
+          </form>
+        </div>
+      </div>
+    `
+
+    const form = document.getElementById('setPasswordForm') as HTMLFormElement
+    const fb = document.getElementById('setPassFeedback')!
+    const btn = document.getElementById('setPassBtn') as HTMLButtonElement
+
+    form?.addEventListener('submit', async (e) => {
+      e.preventDefault()
+      const p1 = (document.getElementById('newPass') as HTMLInputElement).value
+      const p2 = (document.getElementById('newPass2') as HTMLInputElement).value
+
+      if (p1.length < 10) {
+        fb.innerHTML = '<span class="error">PASSWORD MUST BE AT LEAST 10 CHARACTERS.</span>'
+        return
+      }
+      if (p1 !== p2) {
+        fb.innerHTML = '<span class="error">THE TWO PASSWORDS DO NOT MATCH.</span>'
+        return
+      }
+
+      btn.disabled = true
+      fb.innerHTML = '<span class="loading">SAVING...</span>'
+
+      const { error } = await supabase.auth.updateUser({ password: p1 })
+
+      if (error) {
+        btn.disabled = false
+        fb.innerHTML = `<span class="error">${escapeHtml(error.message)}</span>`
+        return
+      }
+
+      try { sessionStorage.removeItem('nouie_mande_modpas') } catch (err) { /* mòd prive */ }
+      fb.innerHTML = '<span class="success">PASSWORD SAVED. OPENING ADMIN...</span>'
+      setTimeout(() => { window.location.hash = '#admin' }, 900)
+    })
+  }
 
   private async renderAdmin(contentDiv: HTMLElement): Promise<void> {
     // Delegate to refactored AdminDashboard component

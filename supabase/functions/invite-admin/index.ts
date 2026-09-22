@@ -71,8 +71,13 @@ serve(async (req: Request) => {
   // 3. Envitasyon an. Si moun nan gen yon kont deja, Supabase bay yon erè —
   //    nan ka sa a nou jis otorize l (li konnen modpas li deja).
   let envite = true
+  // Redireksyon an ale sou rasin sit la, PA sou `/#admin`. Supabase kole pwòp
+  // paramèt li yo nan fragman an (`#access_token=...&type=invite`); si nou mete
+  // yon hash nou menm, de fragman yo antre youn nan lòt epi lyen an kraze.
+  // Paj la detekte `type=invite` epi li mennen moun nan sou ekran « chwazi
+  // modpas » la.
   const { error: inviteErr } = await admin.auth.admin.inviteUserByEmail(email, {
-    redirectTo: `${siteUrl}/#admin`,
+    redirectTo: `${siteUrl}/`,
   })
 
   if (inviteErr) {

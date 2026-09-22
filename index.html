@@ -2,6 +2,18 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
+    <script>
+      // Yon lyen envitasyon (oswa rekiperasyon modpas) Supabase rive ak
+      // `#access_token=...&type=invite` nan URL la. Kliyan supabase-js la li l
+      // epi li efase l nan bwat adrès la tousuit — donk si nou pa make l ISIT,
+      // anvan tout lòt script, nou pèdi enfòmasyon an epi moun nan ap tonbe sou
+      // paj akèy la san janm chwazi yon modpas.
+      try {
+        if (/type=(invite|recovery)/.test(location.hash || '')) {
+          sessionStorage.setItem('nouie_mande_modpas', '1')
+        }
+      } catch (e) { /* mòd prive: nou kontinye san mak la */ }
+    </script>
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="theme-color" content="#ffffff" />
