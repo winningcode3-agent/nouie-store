@@ -382,6 +382,8 @@ All graphics, designs, logos, product names, and content appearing on this site 
 
     contentDiv.innerHTML = `
       <div class="editorial-home">
+        <!-- Yon <h1> pa paj pou Google ak lektè ekran; kouvèti a se yon imaj. -->
+        <h1 class="sr-only">NOUIE — Technical Streetwear</h1>
         <div class="editorial-strip static-collage">
           <picture>
             <!-- Sou telefòn, twa panno kòt a kòt bay twa ti imaj 130 px — pwodwi
@@ -477,6 +479,7 @@ All graphics, designs, logos, product names, and content appearing on this site 
   private async renderCollection(contentDiv: HTMLElement): Promise<void> {
     contentDiv.innerHTML = `
       <div class="collection-page">
+        <h1 class="sr-only">NOUIE Collection</h1>
         <div class="collection-header-nav" id="collectionNav"></div>
         <div id="collection-grid" class="collection-grid">
           <div class="loading-state">
