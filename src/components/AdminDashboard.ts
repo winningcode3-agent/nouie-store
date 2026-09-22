@@ -118,6 +118,27 @@ export class AdminDashboard {
     // ==========================================
     // 1. ORDERS MANAGEMENT (A1 & E2)
     // ==========================================
+    // Rele Edge Function send-email. Retounen null si imèl la pati, oswa yon
+    // mesaj erè klè pou admin lan. supabase-js kache kò repons lan dèyè yon
+    // mesaj jenerik lè estati a pa 2xx — nou li l nan error.context.
+    private async sendEmail(payload: Record<string, unknown>): Promise<string | null> {
+        const { data, error } = await supabase.functions.invoke('send-email', { body: payload })
+        if (!error && !(data as any)?.error) return null
+        let kod = (data as any)?.error || ''
+        const raw = (error as any)?.context
+        if (!kod && raw && typeof raw.json === 'function') {
+            try { kod = (await raw.clone().json())?.error || '' } catch { /* pa JSON */ }
+        }
+        const mesaj: Record<string, string> = {
+            SMTP_PA_KONFIGIRE: 'EMAIL IS NOT SET UP YET (HOSTINGER MAILBOX + SMTP SECRETS).',
+            AKSE_REFIZE: 'YOUR SESSION IS NOT AUTHORIZED.',
+            PA_GEN_TRACKING: 'ADD A TRACKING NUMBER FIRST.',
+            DESTINATÈ_ENVALID: 'THE CUSTOMER EMAIL ADDRESS IS INVALID.',
+            REPONS_VID: 'WRITE A REPLY FIRST.',
+        }
+        return mesaj[kod] || `EMAIL FAILED${kod ? `: ${kod}` : ''}`
+    }
+
     private async renderOrders(container: HTMLElement): Promise<void> {
         container.innerHTML = `
       <header class="admin-header">
@@ -176,6 +197,24 @@ export class AdminDashboard {
 
             let allOrders: Order[] = dbOrders || []
 
+            // Sa ki pati pou chak kòmand (konfimasyon, livrezon) — dènye eta a.
+            const imelPaKomand: Record<string, Record<string, string>> = {}
+            const { data: logs } = await supabase
+                .from('email_log')
+                .select('order_id, kind, status, created_at')
+                .not('order_id', 'is', null)
+                .order('created_at', { ascending: true })
+            for (const l of logs || []) {
+                (imelPaKomand[l.order_id] ||= {})[l.kind] = l.status
+            }
+            const badjImel = (id: any) => {
+                const e = imelPaKomand[id] || {}
+                const b = (kind: string, label: string) => e[kind] === 'sent'
+                    ? `<small class="email-pill email-ok">✉ ${label}</small>`
+                    : e[kind] === 'failed' ? `<small class="email-pill email-fail">⚠ ${label} EMAIL FAILED</small>` : ''
+                return b('order_confirmation', 'CONFIRMATION') + b('shipped', 'SHIPPING')
+            }
+
             const renderRows = (ordersToDisplay: Order[]) => {
                 if (ordersToDisplay.length === 0) {
                     tbody.innerHTML = '<tr><td colspan="7" class="table-empty">NO_DATA_MATCHING_FILTER</td></tr>'
@@ -188,6 +227,7 @@ export class AdminDashboard {
             <td class="order-customer">
               <div class="customer-name">${escapeHtml(order.customer_name || '')}</div>
               <div class="customer-email">${escapeHtml(order.customer_email || '')}</div>
+              ${badjImel(order.id)}
             </td>
             <td class="order-date">${new Date(order.created_at || Date.now()).toLocaleDateString()}</td>
             <td class="order-total">
@@ -214,7 +254,7 @@ export class AdminDashboard {
               </select>
               <div class="tracking-cell" data-id="${order.id}">
                 ${order.tracking_number
-                        ? `<span class="tracking-info">🚚 ${order.carrier || ''} ${order.tracking_number}</span>`
+                        ? `<span class="tracking-info">🚚 ${escapeHtml(order.carrier || '')} ${escapeHtml(order.tracking_number)}</span>`
                         : ''}
               </div>
             </td>
@@ -293,8 +333,9 @@ export class AdminDashboard {
                             return
                         }
 
-                        await this.saveOrderStatus(id, { status: newStatus })
+                        const ok = await this.saveOrderStatus(id, { status: newStatus })
                         target.setAttribute('data-prev', newStatus)
+                        if (ok && newStatus === 'shipped') await this.notifyShipped(id, target)
                     })
                 })
 
@@ -389,12 +430,27 @@ export class AdminDashboard {
         })
     }
 
-    private async saveOrderStatus(id: string, fields: { status?: string, tracking_number?: string, carrier?: string }): Promise<void> {
+    private async saveOrderStatus(id: string, fields: { status?: string, tracking_number?: string, carrier?: string }): Promise<boolean> {
         const { error } = await supabase.from('orders').update(fields).eq('id', id)
         if (error) {
             console.error('Failed to update order status:', error)
             alert(`UPDATE FAILED: ${error.message}`)
+            return false
         }
+        return true
+    }
+
+    // Kliyan an resevwa nimewo tracking la otomatikman. Si imèl la pa pati,
+    // admin lan wè l tousuit — kòmand lan rete SHIPPED kanmenm.
+    private async notifyShipped(orderId: string, anchor: HTMLElement): Promise<void> {
+        const cell = anchor.closest('.order-status') as HTMLElement | null
+        const note = document.createElement('small')
+        note.className = 'email-pill'
+        note.textContent = '✉ SENDING SHIPPING EMAIL...'
+        cell?.appendChild(note)
+        const err = await this.sendEmail({ action: 'shipped', order_id: Number(orderId) })
+        note.className = `email-pill ${err ? 'email-fail' : 'email-ok'}`
+        note.textContent = err ? `⚠ ${err}` : '✉ SHIPPING EMAIL SENT TO CUSTOMER'
     }
 
     private promptTrackingInfo(selectEl: HTMLSelectElement, orderId: string, status: string): void {
@@ -426,14 +482,16 @@ export class AdminDashboard {
                 return
             }
 
-            await this.saveOrderStatus(orderId, { status, tracking_number, carrier })
+            const ok = await this.saveOrderStatus(orderId, { status, tracking_number, carrier })
+            if (!ok) return
 
             const trackingCell = cell.parentElement?.querySelector('.tracking-cell')
-            if (trackingCell) trackingCell.innerHTML = `<span class="tracking-info">🚚 ${carrier} ${tracking_number}</span>`
+            if (trackingCell) trackingCell.innerHTML = `<span class="tracking-info">🚚 ${escapeHtml(carrier)} ${escapeHtml(tracking_number)}</span>`
 
             form.remove()
             selectEl.disabled = false
             selectEl.setAttribute('data-prev', status)
+            if (status === 'shipped') await this.notifyShipped(orderId, selectEl)
         })
 
         form.querySelector('.btn-tracking-cancel')?.addEventListener('click', () => {
@@ -1872,6 +1930,14 @@ export class AdminDashboard {
             return
         }
 
+        const { data: replyLogs } = await supabase
+            .from('email_log')
+            .select('message_id, status, body, created_at')
+            .eq('kind', 'reply')
+            .order('created_at', { ascending: true })
+        const replies: Record<string, any[]> = {}
+        for (const l of replyLogs || []) (replies[l.message_id] ||= []).push(l)
+
         tbody.innerHTML = messages.map((msg: any) => `
       <tr>
         <td>${new Date(msg.created_at).toLocaleDateString()}</td>
@@ -1879,9 +1945,53 @@ export class AdminDashboard {
         <td>${escapeHtml(msg.email || '')}</td>
         <td>${escapeHtml(msg.subject || '—')}</td>
         <td class="message-cell">${escapeHtml(msg.message || '')}</td>
-        <td><a href="mailto:${encodeURIComponent(msg.email || '')}" class="btn-view-details">REPLY</a></td>
+        <td>
+          <button type="button" class="btn-view-details btn-reply" data-id="${msg.id}">REPLY</button>
+          ${replies[msg.id]?.length ? `<div class="email-pill email-ok">✉ REPLIED ${replies[msg.id].length}×</div>` : ''}
+        </td>
+      </tr>
+      <tr class="reply-row" id="replyRow-${msg.id}" hidden>
+        <td colspan="6">
+          ${(replies[msg.id] || []).map((rp: any) => `
+            <div class="reply-history ${rp.status === 'failed' ? 'email-fail' : ''}">
+              <small>${rp.status === 'sent' ? '✉ SENT' : rp.status === 'failed' ? '⚠ FAILED' : '…'} · ${new Date(rp.created_at).toLocaleString()}</small>
+              <div>${escapeHtml(rp.body || '')}</div>
+            </div>`).join('')}
+          <textarea class="reply-text" rows="5" maxlength="5000" placeholder="WRITE YOUR REPLY TO ${escapeHtml((msg.email || '').toUpperCase())} — IT WILL BE SENT FROM THE NOUIE SUPPORT ADDRESS"></textarea>
+          <div class="reply-actions">
+            <button type="button" class="btn-submit-form btn-send-reply" data-id="${msg.id}">SEND REPLY</button>
+            <span class="reply-feedback"></span>
+          </div>
+        </td>
       </tr>
     `).join('')
+
+        tbody.querySelectorAll<HTMLButtonElement>('.btn-reply').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const row = document.getElementById(`replyRow-${btn.dataset.id}`)
+                if (!row) return
+                row.hidden = !row.hidden
+                if (!row.hidden) (row.querySelector('.reply-text') as HTMLTextAreaElement)?.focus()
+            })
+        })
+
+        tbody.querySelectorAll<HTMLButtonElement>('.btn-send-reply').forEach(btn => {
+            btn.addEventListener('click', async () => {
+                const row = btn.closest('.reply-row') as HTMLElement
+                const text = (row.querySelector('.reply-text') as HTMLTextAreaElement).value.trim()
+                const fb = row.querySelector('.reply-feedback') as HTMLElement
+                if (!text) { fb.innerHTML = '<span class="error">WRITE A REPLY FIRST.</span>'; return }
+                btn.disabled = true
+                fb.innerHTML = '<span class="loading">SENDING...</span>'
+                const err = await this.sendEmail({ action: 'reply', message_id: Number(btn.dataset.id), body: text })
+                btn.disabled = false
+                if (err) {
+                    fb.innerHTML = `<span class="error">${escapeHtml(err)}</span>`
+                } else {
+                    await this.renderMessages(container)
+                }
+            })
+        })
     }
 
     private async renderSubscribers(container: HTMLElement): Promise<void> {
@@ -1985,7 +2095,7 @@ export class AdminDashboard {
           <div class="invoice-meta">
             <div>REF: INV_${orderId.toString().slice(-6).toUpperCase()}</div>
             <div>DATE: ${new Date(order.created_at).toLocaleDateString()}</div>
-            ${order.tracking_number ? `<div>TRACKING: ${order.carrier || ''} ${order.tracking_number}</div>` : ''}
+            ${order.tracking_number ? `<div>TRACKING: ${escapeHtml(order.carrier || '')} ${escapeHtml(order.tracking_number)}</div>` : ''}
           </div>
         </div>
         
@@ -2064,14 +2174,44 @@ export class AdminDashboard {
       </div>
       
       <div class="invoice-actions">
-        <!-- Anvan: bouton sa a te afiche « INVOICE SUCCESSFULLY TRANSMITTED »
-             san voye anyen ditou. Kounye a li louvri aplikasyon imèl admin lan,
-             adrese bay kliyan an — onèt jiskaske nou gen yon vrè sèvè imèl. -->
-        <a class="btn-email-invoice" href="mailto:${encodeURIComponent(order.customer_email || '')}?subject=${encodeURIComponent(`${business.name || 'NOUIE'} — ORDER #${order.id}`)}">EMAIL CUSTOMER</a>
+        <!-- Voye resi/konfimasyon an ankò sou non support@no-uie.com. Anvan
+             bouton sa a te afiche « TRANSMITTED » san voye anyen. -->
+        <button class="btn-email-invoice" id="sendReceipt">EMAIL RECEIPT TO CUSTOMER</button>
         <button class="btn-print-invoice" onclick="window.print()">PRINT_HARDCOPY</button>
       </div>
+      <div class="invoice-email-log" id="invoiceEmailLog"></div>
     `
 
+
+        const kindLabel: Record<string, string> = { order_confirmation: 'ORDER CONFIRMATION', shipped: 'SHIPPING / TRACKING' }
+        const loadLog = async () => {
+            const box = document.getElementById('invoiceEmailLog')
+            if (!box) return
+            const { data: logs } = await supabase
+                .from('email_log')
+                .select('kind, status, error, created_at, to_email')
+                .eq('order_id', order.id)
+                .order('created_at', { ascending: false })
+            box.innerHTML = (logs && logs.length)
+                ? `<h4>EMAILS SENT FOR THIS ORDER</h4>` + logs.map((l: any) => `
+                    <div class="email-log-row ${l.status === 'failed' ? 'email-fail' : 'email-ok'}">
+                      ${l.status === 'sent' ? '✉' : l.status === 'failed' ? '⚠' : '…'} ${kindLabel[l.kind] || escapeHtml(l.kind)} → ${escapeHtml(l.to_email)} · ${new Date(l.created_at).toLocaleString()}
+                      ${l.status === 'failed' ? `<br><small>${escapeHtml(l.error || '')}</small>` : ''}
+                    </div>`).join('')
+                : '<h4>NO EMAILS SENT FOR THIS ORDER YET</h4>'
+        }
+        void loadLog()
+
+        document.getElementById('sendReceipt')?.addEventListener('click', async (e) => {
+            const btn = e.currentTarget as HTMLButtonElement
+            btn.disabled = true
+            btn.textContent = 'SENDING...'
+            const err = await this.sendEmail({ action: 'order_confirmation', order_id: order.id })
+            btn.disabled = false
+            btn.textContent = err ? 'EMAIL RECEIPT TO CUSTOMER' : 'RECEIPT SENT ✓'
+            if (err) alert(err)
+            await loadLog()
+        })
     }
 
     // ==========================================

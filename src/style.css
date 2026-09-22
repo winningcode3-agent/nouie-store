@@ -4307,3 +4307,66 @@ body.signup-popup-open {
   text-decoration: underline;
   white-space: nowrap;
 }
+
+/* Imèl nan panèl admin lan (kòmand, fakti, mesaj) */
+.email-pill {
+  display: block;
+  margin-top: 4px;
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+}
+
+.email-ok { color: #10b981; }
+.email-fail { color: #E30613; }
+
+.reply-row td {
+  background: #fafafa;
+  padding: 1rem 1.25rem;
+}
+
+.reply-history {
+  border-left: 3px solid #10b981;
+  padding: 0.4rem 0 0.4rem 0.75rem;
+  margin-bottom: 0.75rem;
+  white-space: pre-wrap;
+  font-size: 0.85rem;
+}
+
+.reply-history.email-fail { border-left-color: #E30613; }
+
+.reply-text {
+  box-sizing: border-box;
+  width: 100%;
+  padding: 0.75rem;
+  border: 1px solid rgba(0, 0, 0, 0.2);
+  font: inherit;
+  font-size: 0.9rem;
+  resize: vertical;
+}
+
+.reply-actions {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-top: 0.75rem;
+}
+
+.reply-actions .btn-submit-form { width: auto; }
+
+.invoice-email-log {
+  margin-top: 1.5rem;
+  font-size: 0.8rem;
+}
+
+.invoice-email-log h4 {
+  font-size: 0.72rem;
+  letter-spacing: 0.12em;
+  margin: 0 0 0.5rem;
+}
+
+.email-log-row { padding: 0.35rem 0; }
+
+@media print {
+  .invoice-email-log { display: none; }
+}

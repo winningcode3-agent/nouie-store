@@ -1,6 +1,11 @@
+// ⚠️ DEPLWAYE AK: supabase functions deploy stripe-webhook --no-verify-jwt
+// Stripe pa voye antèt Authorization. San flag la, pòtay Supabase la refize
+// TOUT webhook yo (401) epi okenn kòmand p ap janm pase `paid`. Sekirite a se
+// siyati Stripe la (anba), pa JWT. (Sa te rive 22 sept pandan ~1 minit.)
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import Stripe from "npm:stripe@17"
 import { createClient } from "npm:@supabase/supabase-js@2"
+import { sendOrderConfirmation } from "../_shared/emails.ts"
 
 // Retire tout espas blan — gade nòt nan create-checkout-session.
 const stripeSecretKey = (Deno.env.get("STRIPE_SECRET_KEY") || "").replace(/\s+/g, "")
@@ -117,6 +122,18 @@ serve(async (req: Request) => {
         }
 
         console.log(`Kòmand #${orderId} make 'paid' avèk siksè!`)
+
+        // 4. Imèl konfimasyon. Li pa janm fè webhook la echwe: kòmand lan
+        //    PEYE kèlkeswa sa k rive imèl la. `waitUntil` kite Stripe resevwa
+        //    200 an touswit pandan SMTP a ap travay. Echèk yo parèt nan
+        //    email_log (panèl la) — admin lan ka revoye.
+        const imel = sendOrderConfirmation(supabase, orderId, true)
+          .then((r) => { if (!r.ok) console.error(`Imèl konfimasyon #${orderId} echwe:`, r.error) })
+          .catch((e) => console.error(`Imèl konfimasyon #${orderId} kraze:`, e))
+        const rt = (globalThis as any).EdgeRuntime
+        if (rt?.waitUntil) rt.waitUntil(imel)
+        else await imel
+
         return new Response(JSON.stringify({ received: true, status: "paid" }), { status: 200 })
       }
 
