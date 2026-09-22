@@ -20,6 +20,11 @@
 
 -- 1. contact_messages
 DROP POLICY IF EXISTS "contact_access" ON public.contact_messages;
+-- 22 sept 2026: migrasyon an te kale sou yon rejwe (`db push` sou yon baz kote
+-- migrasyon yo te aplike alamen). Li te lage ANSYEN non an sèlman epi kreye
+-- NOUVO a san lage l — donk dezyèm pasaj la bay 42710. Yon migrasyon dwe ka
+-- kouri de fwa san kraze.
+DROP POLICY IF EXISTS "Admins manage contact messages" ON public.contact_messages;
 
 CREATE POLICY "Admins manage contact messages"
 ON public.contact_messages FOR ALL
@@ -28,6 +33,7 @@ WITH CHECK (public.is_admin());
 
 -- 2. newsletter_subscribers
 DROP POLICY IF EXISTS "newsletter_access" ON public.newsletter_subscribers;
+DROP POLICY IF EXISTS "Admins manage newsletter subscribers" ON public.newsletter_subscribers;
 
 CREATE POLICY "Admins manage newsletter subscribers"
 ON public.newsletter_subscribers FOR ALL

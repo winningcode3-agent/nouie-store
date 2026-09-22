@@ -196,6 +196,11 @@ export class AdminDashboard {
               ${order.tax_amount ? `<small class="tax-pill">+TAX: $${Number(order.tax_amount).toFixed(2)}</small>` : ''}
             </td>
             <td class="order-status">
+              <!-- Prèv peman an chita sou paid_at, ki pa ka chanje. Menm si yon moun
+                   deplase estati livrezon an, badj sa a rete — se li ki di verite a. -->
+              ${order.paid_at
+                        ? `<span class="paid-proof" title="Peman konfime nan Stripe — ${new Date(order.paid_at).toLocaleString()}">✅ PAID</span>`
+                        : `<span class="paid-proof paid-proof-none">UNPAID</span>`}
               <select class="status-select status-badge-${order.status}" data-id="${order.id}" data-prev="${order.status}">
                 <option value="pending" ${order.status === 'pending' ? 'selected' : ''}>PENDING</option>
                 <!-- PAID ak PAYMENT REVIEW se Stripe ki fikse yo (webhook). Yo la pou afichaj
@@ -243,7 +248,14 @@ export class AdminDashboard {
 
                         // Sekirite: Bloke chanjman nan processing/shipped/delivered si kòmand lan poko peye.
                         // 'payment_review' ladan tou: montan Stripe la pa t matche montan kòmand lan.
-                        if (['pending', 'payment_review'].includes(prevStatus) && ['processing', 'shipped', 'delivered'].includes(newStatus)) {
+                        // Gad livrezon: nou konpare sou `paid_at` — verite peman an, sa
+                        // webhook Stripe la ekri yon sèl fwa — epi PA sou `status`.
+                        // 22 sept 2026: yon kòmand ki te peye toutbon te tonbe sou
+                        // 'pending' nan meni an, epi gad sa a te refize kite l ale
+                        // 'shipped' ak mesaj « KÒMAND SA A PA PEYE » pandan lajan an te
+                        // deja nan kont lan.
+                        const genPeman = !!order?.paid_at
+                        if (!genPeman && ['processing', 'shipped', 'delivered'].includes(newStatus)) {
                             const why = prevStatus === 'payment_review'
                                 ? 'PEMAN AN PA MATCHE MONTAN KÒMAND LAN — VERIFYE NAN STRIPE ANVAN.\n(PAYMENT MISMATCH. Verify in Stripe dashboard before fulfilling.)'
                                 : 'PA LIVRE — KÒMAND SA A PA PEYE!\n(CANNOT FULFILL UNPAID ORDER. Wait until payment is confirmed by Stripe.)'
@@ -1490,13 +1502,29 @@ export class AdminDashboard {
             const emailInput = document.getElementById('newAdminEmail') as HTMLInputElement
             const email = emailInput.value.toLowerCase().trim()
 
-            fb.innerHTML = '<span class="loading">AUTHORIZING...</span>'
+            fb.innerHTML = '<span class="loading">SENDING INVITE...</span>'
 
-            const { error } = await supabase.from('admins').insert({ email })
-            if (error) {
-                fb.innerHTML = `<span class="error">FAILED: ${error.message}</span>`
+            // Anvan: `insert` dirèk nan `admins` — sa te otorize yon imèl san kreye
+            // okenn kont ak san voye okenn imèl, donk moun nan pa t ka konekte.
+            // Kounye a Edge Function lan voye yon vrè envitasyon epi moun nan chwazi
+            // modpas pa l.
+            const { data, error } = await supabase.functions.invoke('invite-admin', {
+                body: { email },
+            })
+
+            const kodErè = (data as any)?.error || (error ? 'ECHÈK_ENVITASYON' : '')
+            if (kodErè) {
+                const mesaj: Record<string, string> = {
+                    DEJA_ADMIN: 'THIS EMAIL IS ALREADY AN ADMINISTRATOR.',
+                    IMÈL_ENVALID: 'INVALID EMAIL ADDRESS.',
+                    AKSE_REFIZE: 'YOUR SESSION IS NOT AUTHORIZED TO INVITE.',
+                    ENVITE_MEN_PA_OTORIZE: 'INVITE EMAIL SENT, BUT AUTHORIZATION FAILED — TRY AGAIN.',
+                }
+                fb.innerHTML = `<span class="error">${mesaj[kodErè] || 'INVITE FAILED — TRY AGAIN.'}</span>`
             } else {
-                fb.innerHTML = `<span class="success">${email.toUpperCase()} AUTHORIZED AS ADMIN</span>`
+                fb.innerHTML = (data as any)?.envitasyon_voye === false
+                    ? `<span class="success">${email.toUpperCase()} AUTHORIZED — THEY ALREADY HAD AN ACCOUNT.</span>`
+                    : `<span class="success">INVITE SENT TO ${email.toUpperCase()} — THEY WILL SET THEIR OWN PASSWORD.</span>`
                 emailInput.value = ''
                 await refreshAdmins()
             }

@@ -3170,6 +3170,22 @@ body.has-cookie-banner .footer {
   color: #888;
 }
 
+/* Prèv peman — soti nan orders.paid_at, ki pa ka chanje. Li rete vizib kèlkeswa
+   estati livrezon an, konsa admin lan pa janm ap gade yon kòmand peye epi kwè
+   li pa peye. */
+.paid-proof {
+  display: block;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  color: #10b981;
+  margin-bottom: 4px;
+}
+
+.paid-proof-none {
+  color: #b91c1c;
+}
+
 /* Modals */
 .admin-modal-overlay {
   position: fixed;
