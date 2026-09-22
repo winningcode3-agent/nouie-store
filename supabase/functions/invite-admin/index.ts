@@ -65,8 +65,11 @@ serve(async (req: Request) => {
 
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return json({ error: "IMÈL_ENVALID" }, 400)
 
+  // Yon moun ki deja nan `admins` men ki poko janm louvri envitasyon l (lyen
+  // pèdi, ekspire, oswa — 22 sept — Site URL Supabase ki te voye l sou
+  // localhost) dwe ka resevwa yon nouvo lyen. Supabase refize envite yon kont
+  // ki deja konfime, donk se erè a ki di nou si moun nan vrèman deja aktif.
   const { data: deja } = await admin.from("admins").select("id").eq("email", email).maybeSingle()
-  if (deja) return json({ error: "DEJA_ADMIN" }, 409)
 
   // 3. Envitasyon an. Si moun nan gen yon kont deja, Supabase bay yon erè —
   //    nan ka sa a nou jis otorize l (li konnen modpas li deja).
@@ -91,6 +94,7 @@ serve(async (req: Request) => {
     const dejaGenKont = msg.includes("already been registered") || msg.includes("already exists")
 
     if (dejaGenKont) {
+      if (deja) return json({ error: "DEJA_ADMIN" }, 409)
       envite = false
     } else {
       console.error("Echèk imèl envitasyon:", inviteErr.message)
@@ -112,7 +116,9 @@ serve(async (req: Request) => {
 
   // 4. Otorizasyon an. Si sa a echwe apre imèl la pati, moun nan ap gen yon kont
   //    san dwa — donk nou di l klèman olye nou fè konprann tout bagay bon.
-  const { error: insErr } = await admin.from("admins").insert({ email })
+  const { error: insErr } = deja
+    ? { error: null }
+    : await admin.from("admins").insert({ email })
   if (insErr) {
     console.error("Imèl envitasyon pati men otorizasyon an echwe:", insErr.message)
     return json({ error: "ENVITE_MEN_PA_OTORIZE", detay: insErr.message }, 500)
