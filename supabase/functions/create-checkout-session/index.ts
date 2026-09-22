@@ -32,6 +32,20 @@ serve(async (req: Request) => {
 
   try {
     const supabase = createClient(supabaseUrl, supabaseServiceRoleKey)
+
+    // 0. MAINTENANCE MODE (admin → STORE MODE). Anvan 22 sept bouton an pa t
+    //    fè anyen: checkout la te rete louvri pandan bànyè a di « fèmen ».
+    //    Nou tcheke l ISIT LA, sou sèvè a — paj la ka kache bouton an, men se
+    //    sa ki anpeche yon moun kontoune l. Kòmand lan pa janm kreye.
+    const { data: storeRow } = await supabase
+      .from("store_settings").select("value").eq("key", "store").maybeSingle()
+    if ((storeRow?.value as any)?.maintenance === true) {
+      return new Response(JSON.stringify({ error: "BOUTIK_FÈMEN" }), {
+        status: 503,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      })
+    }
+
     const body = await req.json()
     const {
       p_customer_name,

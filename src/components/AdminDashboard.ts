@@ -1007,8 +1007,9 @@ export class AdminDashboard {
                 <input type="checkbox" name="maintenance" ${settings.store.maintenance ? 'checked' : ''}>
                 <span class="slider"></span>
               </label>
-              <span class="switch-label">MAINTENANCE MODE (STUDIO LOCK)</span>
+              <span class="switch-label">MAINTENANCE MODE — CHECKOUT CLOSED</span>
             </div>
+            <span class="form-hint">ON: visitors can browse and fill their cart, but nobody can pay. Turn it OFF on launch day (and clear the banner below).</span>
             <div class="form-group">
               <label>GLOBAL ANNOUNCEMENT BANNER</label>
               <input type="text" name="announcement" placeholder="e.g. DROP 01 NOW LIVE / WORLDWIDE SHIPPING" value="${settings.store.announcement || ''}">

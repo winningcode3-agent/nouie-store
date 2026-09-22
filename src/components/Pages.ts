@@ -880,9 +880,10 @@ All graphics, designs, logos, product names, and content appearing on this site 
       return
     }
 
-    const [shippingConf, taxConf] = await Promise.all([
+    const [shippingConf, taxConf, storeConf] = await Promise.all([
       settingsService.getShipping(),
-      settingsService.getTax()
+      settingsService.getTax(),
+      settingsService.getStoreGeneral()
     ])
 
     const subtotal = cartStore.getTotal()
@@ -1028,7 +1029,13 @@ All graphics, designs, logos, product names, and content appearing on this site 
               </div>
             </div>
 
-            <button type="button" class="btn-place-order" id="placeOrderBtn">PLACE ORDER</button>
+            ${storeConf.maintenance
+              // Mòd maintenance: kliyan an wè poukisa, panyen li rete sove.
+              // Sèvè a refize tou (create-checkout-session) — sa a se sèlman
+              // pou l pa ranpli tout fòm lan pou granmesi.
+              ? `<button type="button" class="btn-place-order" disabled>CHECKOUT OPENS SOON</button>
+                 <p class="checkout-terms-notice">WE ARE UPDATING THE STORE. YOUR CART IS SAVED — COME BACK SHORTLY TO COMPLETE YOUR ORDER.</p>`
+              : `<button type="button" class="btn-place-order" id="placeOrderBtn">PLACE ORDER</button>`}
             <p class="checkout-terms-notice">
               BY PLACING AN ORDER, YOU AGREE TO NOUIE'S <a href="#terms">TERMS OF SERVICE</a> AND <a href="#privacy">PRIVACY POLICY</a>.
             </p>
@@ -1155,7 +1162,9 @@ All graphics, designs, logos, product names, and content appearing on this site 
         // sou paj checkout la devan kliyan yo. Yon detay teknik pa gen dwa soti isit.
         let userMessage = 'CHECKOUT IS TEMPORARILY UNAVAILABLE. YOUR CART IS SAVED — PLEASE TRY AGAIN SHORTLY, OR <a href="#contact">CONTACT US</a> IF THE PROBLEM CONTINUES.'
 
-        if (errMsg.includes('PANYEN_VID')) {
+        if (errMsg.includes('BOUTIK_FÈMEN')) {
+          userMessage = 'CHECKOUT IS CLOSED WHILE WE UPDATE THE STORE. YOUR CART IS SAVED — PLEASE COME BACK SHORTLY.'
+        } else if (errMsg.includes('PANYEN_VID')) {
           userMessage = 'YOUR CART IS EMPTY.'
         } else if (errMsg.includes('PWODWI_ENDISPONIB')) {
           userMessage = 'ONE OR MORE ITEMS IN YOUR CART ARE NO LONGER AVAILABLE.'
