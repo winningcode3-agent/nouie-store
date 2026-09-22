@@ -10,6 +10,19 @@ import { settingsService } from '../lib/settings'
 import { renderSafeMarkdown, escapeHtml } from '../lib/markdown'
 import { imageSrc, NO_IMAGE } from '../lib/images'
 
+// Yon « ghost click »: sou iOS, lè yon paj rechaje, touch ki te kòmanse anvan
+// rechajman an ka rejwe kòm yon klik sou eleman ki anba dwèt la. Rezilta pou
+// Jackpot: chak refresh sou akèy te louvri yon paj pwodwi li pa t mande.
+// Nou inyore tout klik navigasyon nan premye 600 ms apre chajman an.
+const PAJ_CHAJE_A = Date.now()
+const MS_GAD_GHOST = 600
+
+function klikValab(): boolean {
+  // Sèlman fenèt tan an. Yon tchèk `isTrusted` pa t ede: ghost click iOS yo make
+  // kòm « trusted » tou, epi li te bloke tout klik zouti tès yo.
+  return Date.now() - PAJ_CHAJE_A >= MS_GAD_GHOST
+}
+
 export class Pages {
   private contentDiv: HTMLElement | null = null
 
@@ -369,7 +382,12 @@ All graphics, designs, logos, product names, and content appearing on this site 
     contentDiv.innerHTML = `
       <div class="editorial-home">
         <div class="editorial-strip static-collage">
-          <img src="/assets/home_cover_collage.jpg" alt="NOUIE Streetwear Collection SS26 - Editorial Collage" width="1920" height="880" fetchpriority="high">
+          <picture>
+            <!-- Sou telefòn, twa panno kòt a kòt bay twa ti imaj 130 px — pwodwi
+                 a pa li. Donk telefòn resevwa yon sèl panno an fòma vètikal. -->
+            <source media="(max-width: 768px)" srcset="/assets/home_cover_mobile.jpg" width="1080" height="1350">
+            <img src="/assets/home_cover_collage.jpg" alt="NOUIE Streetwear Collection SS26 - Editorial Collage" width="1920" height="880" fetchpriority="high">
+          </picture>
         </div>
         <!-- De bouton sou kouvèti a. BUY NOW mennen sou paj pwodwi ki nan kouvèti
              a — pa dirèk nan checkout — paske yon rad mande yon gwosè; san
@@ -416,6 +434,7 @@ All graphics, designs, logos, product names, and content appearing on this site 
     // apre `await this.getProducts()` — lè paj la te rann de fwa, bouton ki te
     // sou ekran an pa t gen okenn koutè epi klik la pa t fè anyen ditou.
     document.getElementById('coverBuyNow')?.addEventListener('click', async () => {
+      if (!klikValab()) return
       const list = await productsPromise
       const featured = list.find(p => p.id === featuredId)
       if (!featured) {
@@ -533,6 +552,7 @@ All graphics, designs, logos, product names, and content appearing on this site 
     // Re-add click listeners for product cards
     container.querySelectorAll('.product-card').forEach(card => {
       card.addEventListener('click', () => {
+        if (!klikValab()) return
         const id = card.getAttribute('data-id')
         if (id) window.location.hash = `#product-${id}`
       })

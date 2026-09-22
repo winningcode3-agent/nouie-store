@@ -144,6 +144,7 @@ body {
   height: auto;
 }
 
+.static-collage picture,
 .static-collage img {
   width: 100%;
   height: auto;
@@ -196,16 +197,45 @@ body {
 }
 
 @media (max-width: 768px) {
+  /* Bànyè a pa gen dwa manje tout premye ekran an: nou kenbe l sou 62vh epi
+     nou kadre sou moun nan. San limit sa a, yon foto vètikal pouse pwodwi yo
+     twò lwen anba sou telefòn. */
+  .static-collage img {
+    max-height: 62vh;
+    object-fit: cover;
+    object-position: center 38%;
+  }
+
+  /* Sou telefòn bouton yo te chita nan mitan foto a, sou kò moun nan. Nou
+     desann yo anba kad la — yo rete sou imaj la men yo pa kache pwodwi a. */
   .cover-actions {
+    top: auto;
+    bottom: 16px;
+    transform: translateX(-50%);
     gap: 10px;
     width: calc(100% - 32px);
     justify-content: center;
   }
 
   .cover-btn {
-    padding: 12px 16px;
-    font-size: 0.6rem;
-    letter-spacing: 0.12em;
+    flex: 1 1 0;
+    text-align: center;
+    padding: 13px 10px;
+    font-size: 0.62rem;
+    letter-spacing: 0.1em;
+  }
+
+  /* Bouton + la te pran yon ka nan kat la sou telefòn. */
+  .quick-add-icon {
+    width: 32px;
+    height: 32px;
+    bottom: 8px;
+    right: 8px;
+  }
+
+  .quick-add-icon svg {
+    width: 15px;
+    height: 15px;
   }
 }
 
