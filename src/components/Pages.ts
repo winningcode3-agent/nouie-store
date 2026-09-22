@@ -400,6 +400,10 @@ All graphics, designs, logos, product names, and content appearing on this site 
         </div>
       </div>
       <div class="home-products">
+        <div class="section-header">
+          <h2>THE COLLECTION</h2>
+          <p>SS26 — AVAILABLE NOW</p>
+        </div>
         <div id="home-grid" class="collection-grid">
           <div class="loading-state">LOADING PRODUCTS...</div>
         </div>
