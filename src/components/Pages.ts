@@ -357,10 +357,28 @@ All graphics, designs, logos, product names, and content appearing on this site 
 
   private async renderHome(contentDiv: HTMLElement): Promise<void> {
     contentDiv.className = 'page-container page-home'
+
+    // Pwodwi kouvèti a pwomote. Si reglaj la vid, nou pa montre yon lyen ki kase.
+    const store = await settingsService.getStoreGeneral()
+    const featuredId = (store.featured_product || '').trim()
+
+    // Nou pati chèche pwodwi yo KOUNYE A, men nou pa tann yo pou n tache koutè
+    // bouton an — gade nòt la pi ba.
+    const productsPromise = this.getProducts()
+
     contentDiv.innerHTML = `
       <div class="editorial-home">
         <div class="editorial-strip static-collage">
-          <img src="/assets/home_cover_collage.jpg" alt="NOUIE Streetwear Collection SS26 - Editorial Collage" width="1920" height="1080" fetchpriority="high">
+          <img src="/assets/home_cover_collage.jpg" alt="NOUIE Streetwear Collection SS26 - Editorial Collage" width="1920" height="880" fetchpriority="high">
+        </div>
+        <!-- De bouton sou kouvèti a. BUY NOW mennen sou paj pwodwi ki nan kouvèti
+             a — pa dirèk nan checkout — paske yon rad mande yon gwosè; san
+             gwosè kòmand lan pa ka monte. Pwodwi a soti nan reglaj boutik la
+             (store.featured_product), konsa lè yon nouvo drop soti nou pa
+             bezwen touche kòd la. -->
+        <div class="cover-actions">
+          ${featuredId ? `<button type="button" id="coverBuyNow" class="cover-btn cover-btn-primary">BUY NOW</button>` : ''}
+          <a href="#collection" class="cover-btn">CATALOG</a>
         </div>
       </div>
       <div class="home-products">
@@ -388,7 +406,37 @@ All graphics, designs, logos, product names, and content appearing on this site 
       </div>
     `
 
-    const products = await this.getProducts()
+    // BUY NOW sou kouvèti a: mete pwodwi ki nan foto a nan panyen an epi ale
+    // dirèk nan checkout. Yon rad mande yon gwosè, epi kouvèti a pa gen kote
+    // pou chwazi youn — donk nou pran premye gwosè ki gen estòk. Si okenn pa
+    // gen estòk, nou pa ka vann: nou voye moun nan sou paj pwodwi a kote li wè
+    // sa ki SOLD OUT, olye nou kreye yon kòmand ki pa ka livre.
+    //
+    // NÒT: koutè a TACHE ISIT, anvan tout `await`. Premye vèsyon an te tache l
+    // apre `await this.getProducts()` — lè paj la te rann de fwa, bouton ki te
+    // sou ekran an pa t gen okenn koutè epi klik la pa t fè anyen ditou.
+    document.getElementById('coverBuyNow')?.addEventListener('click', async () => {
+      const list = await productsPromise
+      const featured = list.find(p => p.id === featuredId)
+      if (!featured) {
+        window.location.hash = '#collection'
+        return
+      }
+
+      const stock = featured.stock_by_size || {}
+      const sizeOrder = featured.sizes?.length ? featured.sizes : Object.keys(stock)
+      const available = sizeOrder.find(size => Number(stock[size] ?? 0) > 0)
+
+      if (!available) {
+        window.location.hash = `#product-${featured.id}`
+        return
+      }
+
+      cartStore.addItem(featured.id, featured.name, available, featured.price)
+      window.location.hash = '#checkout'
+    })
+
+    const products = await productsPromise
     const grid = document.getElementById('home-grid')
     if (grid) {
       this.renderCatalogGrid(grid, products)

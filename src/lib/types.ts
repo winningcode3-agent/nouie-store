@@ -118,6 +118,9 @@ export interface TaxSettings {
 export interface StoreGeneralSettings {
     maintenance: boolean
     announcement: string
+    /** Pwodwi kouvèti akèy la pwomote. Bouton BUY NOW sou kouvèti a mennen sou
+     *  paj li. Lè yon nouvo drop soti, se yon sèl valè pou chanje. */
+    featured_product?: string
 }
 
 export interface StoreSettings {

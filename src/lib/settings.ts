@@ -30,7 +30,8 @@ export const DEFAULT_SETTINGS: StoreSettings = {
     },
     store: {
         maintenance: false,
-        announcement: ''
+        announcement: '',
+        featured_product: 'CAT04'
     }
 }
 
@@ -82,9 +83,17 @@ class SettingsService {
                 return fallback
             }
 
-            this.cache[key] = data.value as any
+            // Nou FONN valè a sou defo a. Yon ranje ki nan baz la depi anvan yon
+            // nouvo chan ajoute pa gen chan sa a ladan l — san fonn sa a, chan an
+            // tounen `undefined` epi fonksyonalite a mouri an silans (se sa ki te
+            // fè bouton BUY NOW sou kouvèti a pa parèt ditou).
+            const merged = (fallback && typeof fallback === 'object' && !Array.isArray(fallback))
+                ? { ...(fallback as any), ...(data.value as any) }
+                : (data.value as any)
+
+            this.cache[key] = merged
             this.cacheTime = now
-            return data.value as T
+            return merged as T
         } catch {
             return fallback
         }

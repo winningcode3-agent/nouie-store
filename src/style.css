@@ -150,6 +150,65 @@ body {
   display: block;
 }
 
+/* De bouton sou kouvèti a: achte pwodwi ki nan foto a, oswa louvri katalòg la.
+   Yo poze sou imaj la (pa anba l) pou premye ekran an gen yon aksyon klè. */
+.cover-actions {
+  position: absolute;
+  left: 50%;
+  top: 58%;
+  transform: translate(-50%, -50%);
+  display: flex;
+  /* Yo chita sou de kwen yo, youn chak bò foto mitan an — se konsa Jackpot te
+     trase yo. Espas la swiv lajè ekran an pou yo pa kole sou telefòn. */
+  gap: clamp(14px, 18vw, 250px);
+  z-index: 3;
+}
+
+.cover-btn {
+  display: inline-block;
+  padding: 14px 30px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  text-decoration: none;
+  color: #111;
+  background: rgba(255, 255, 255, 0.92);
+  border: 1px solid #111;
+  backdrop-filter: blur(2px);
+  transition: background 0.2s ease, color 0.2s ease, transform 0.2s ease;
+  white-space: nowrap;
+}
+
+.cover-btn:hover {
+  transform: translateY(-2px);
+}
+
+.cover-btn-primary {
+  color: #fff;
+  background: var(--accent-red, #d92b25);
+  border-color: var(--accent-red, #d92b25);
+}
+
+.cover-btn-primary:hover {
+  background: #111;
+  border-color: #111;
+}
+
+@media (max-width: 768px) {
+  .cover-actions {
+    gap: 10px;
+    width: calc(100% - 32px);
+    justify-content: center;
+  }
+
+  .cover-btn {
+    padding: 12px 16px;
+    font-size: 0.6rem;
+    letter-spacing: 0.12em;
+  }
+}
+
 .editorial-image:hover img {
   transform: scale(1.05);
 }
