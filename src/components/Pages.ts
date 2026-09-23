@@ -1141,8 +1141,14 @@ All graphics, designs, logos, product names, and content appearing on this site 
 
     try {
       // Rele Edge Function create-checkout-session ki rele place_order bò sèvè
+      // Kle piblik sit la, PA sesyon navigatè a. Checkout la pa bezwen konnen
+      // kiyès kliyan an ye; men si navigatè a gen yon ansyen sesyon ki ekspire
+      // (admin, envitasyon, modpas), pòtay Supabase la refize l (401 Invalid
+      // JWT) anvan fonksyon an menm — kliyan an te bloke san okenn rezon vizib
+      // (22 sept, sou iPhone Jackpot).
       const { data, error, response } = await supabase.functions.invoke('create-checkout-session', {
         body: payload,
+        headers: { Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}` },
       }) as { data: any; error: any; response?: Response }
 
       if (error || !data || data.error) {
@@ -1155,7 +1161,8 @@ All graphics, designs, logos, product names, and content appearing on this site 
         if (raw && typeof raw.json === 'function') {
           try {
             const parsed = await raw.clone().json()
-            bodyErr = parsed?.error || ''
+            // Pòtay Supabase la reponn { code, message } — pa { error }.
+            bodyErr = parsed?.error || parsed?.code || ''
           } catch { /* kò a pa JSON — nou tonbe sou error.message */ }
         }
 
@@ -1166,7 +1173,10 @@ All graphics, designs, logos, product names, and content appearing on this site 
         // pou erè biznis nou konnen. Lojik la te ranvèse anvan (pati ak mesaj brit
         // la, ranplase si rekonèt) — se konsa yon erè Stripe te rive parèt tou nen
         // sou paj checkout la devan kliyan yo. Yon detay teknik pa gen dwa soti isit.
-        let userMessage = 'CHECKOUT IS TEMPORARILY UNAVAILABLE. YOUR CART IS SAVED — PLEASE TRY AGAIN SHORTLY, OR <a href="#contact">CONTACT US</a> IF THE PROBLEM CONTINUES.'
+        // Yon ti referans (kòd erè a sèlman, pa okenn detay teknik) pou sipò a
+        // ka konnen sa k pase lè yon kliyan voye yon screenshot.
+        const ref = String(errMsg).replace(/[^A-Z0-9_]/gi, '').slice(0, 32).toUpperCase()
+        let userMessage = `CHECKOUT IS TEMPORARILY UNAVAILABLE. YOUR CART IS SAVED — PLEASE TRY AGAIN SHORTLY, OR <a href="#contact">CONTACT US</a> IF THE PROBLEM CONTINUES.${ref ? `<br><small>REF: ${ref}</small>` : ''}`
 
         if (errMsg.includes('BOUTIK_FÈMEN')) {
           userMessage = 'CHECKOUT IS CLOSED WHILE WE UPDATE THE STORE. YOUR CART IS SAVED — PLEASE COME BACK SHORTLY.'
