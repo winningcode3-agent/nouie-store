@@ -335,12 +335,35 @@ All graphics, designs, logos, product names, and content appearing on this site 
             SEO.updateMeta('PRODUCT NOT FOUND', 'This piece is no longer available.')
             this.renderNotFound(contentDiv, 'THIS PIECE IS NO LONGER AVAILABLE.')
           }
+        } else if (/(^|&)error(_code)?=/.test(page)) {
+          this.renderLinkExpired(contentDiv)
         } else {
           // San sa a, nenpòt lyen kase (#nenpòt) te kite paj la vid nèt.
           SEO.updateMeta('PAGE NOT FOUND', 'This page does not exist.')
           this.renderNotFound(contentDiv, 'THIS PAGE DOES NOT EXIST.')
         }
     }
+  }
+
+  // Lyen envitasyon/modpas ki ekspire oswa ki DEJA itilize (yon dezyèm klik,
+  // oswa aplikasyon Mail la ki louvri l anvan moun nan). Supabase voye moun
+  // nan sou `#error=access_denied&error_code=otp_expired` — anvan, sa te bay
+  // « NOT FOUND » san okenn chemen pou soti (Franckley, 22 sept).
+  private renderLinkExpired(contentDiv: HTMLElement): void {
+    SEO.updateMeta('LINK EXPIRED', 'This link is no longer valid.')
+    contentDiv.innerHTML = `
+      <div class="legal-page">
+        <div class="legal-header">
+          <h1>LINK EXPIRED</h1>
+          <p>THIS LINK HAS EXPIRED OR WAS ALREADY USED.</p>
+        </div>
+        <div class="legal-content">
+          <p>Each email link works only once. To get into the admin panel, open the login page and tap <strong>FORGOT PASSWORD?</strong> — we will email you a fresh link to choose your password.</p>
+          <p><a href="#admin" class="btn-continue">GO TO ADMIN LOGIN</a></p>
+        </div>
+      </div>
+    `
+    try { sessionStorage.removeItem('nouie_mande_modpas') } catch (e) { /* mòd prive */ }
   }
 
   private renderNotFound(contentDiv: HTMLElement, message: string): void {
@@ -1308,18 +1331,7 @@ All graphics, designs, logos, product names, and content appearing on this site 
     const { data: { user } } = await supabase.auth.getUser()
 
     if (!user) {
-      contentDiv.innerHTML = `
-        <div class="legal-page">
-          <div class="legal-header">
-            <h1>LINK EXPIRED</h1>
-            <p>THIS INVITE LINK IS NO LONGER VALID.</p>
-          </div>
-          <div class="legal-content">
-            <p>Invite links expire after a short time. Ask the store owner to send you a new one from the admin panel.</p>
-          </div>
-        </div>
-      `
-      try { sessionStorage.removeItem('nouie_mande_modpas') } catch (e) { /* mòd prive */ }
+      this.renderLinkExpired(contentDiv)
       return
     }
 

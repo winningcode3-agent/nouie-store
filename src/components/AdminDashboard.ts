@@ -2241,6 +2241,7 @@ export class AdminDashboard {
               <input type="password" id="adminPassword" required placeholder="••••••••">
             </div>
             <button type="submit" class="btn-admin-login">INITIATE_SESSION</button>
+            <button type="button" class="btn-forgot-password" id="forgotPasswordBtn">FORGOT PASSWORD?</button>
             <div id="authFeedback" class="auth-feedback"></div>
           </form>
           
@@ -2253,6 +2254,30 @@ export class AdminDashboard {
 
         const form = document.getElementById('adminLoginForm') as HTMLFormElement
         const feedback = document.getElementById('authFeedback')
+
+        // Admin ki pa gen modpas (lyen envitasyon an te deja itilize) oswa ki
+        // bliye l: Supabase voye yon lyen `type=recovery` ki louvri ekran
+        // #modpas la (index.html make l). Mesaj la rete menm jan kèlkeswa si
+        // imèl la egziste — pa gen fwit sou kiyès ki admin.
+        document.getElementById('forgotPasswordBtn')?.addEventListener('click', async (e) => {
+            const btn = e.currentTarget as HTMLButtonElement
+            const email = (document.getElementById('adminEmail') as HTMLInputElement).value.trim()
+            if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+                if (feedback) feedback.innerHTML = '<span class="error">ENTER YOUR ADMIN EMAIL ABOVE, THEN TAP FORGOT PASSWORD.</span>'
+                return
+            }
+            btn.disabled = true
+            if (feedback) feedback.innerHTML = '<span class="loading">SENDING RESET LINK...</span>'
+            const { error } = await supabase.auth.resetPasswordForEmail(email, { redirectTo: 'https://no-uie.com/' })
+            btn.disabled = false
+            if (error && /rate|limit|seconds/i.test(error.message)) {
+                if (feedback) feedback.innerHTML = '<span class="error">TOO MANY REQUESTS — WAIT A FEW MINUTES AND TRY AGAIN.</span>'
+            } else if (error) {
+                if (feedback) feedback.innerHTML = `<span class="error">COULD NOT SEND THE LINK: ${escapeHtml(error.message.toUpperCase())}</span>`
+            } else if (feedback) {
+                feedback.innerHTML = '<span class="success">IF THIS EMAIL BELONGS TO AN ADMINISTRATOR, A LINK TO CHOOSE A NEW PASSWORD IS ON ITS WAY. CHECK YOUR INBOX AND SPAM. THE LINK WORKS ONCE.</span>'
+            }
+        })
 
         form?.addEventListener('submit', async (e) => {
             e.preventDefault()

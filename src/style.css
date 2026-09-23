@@ -4414,3 +4414,21 @@ body.signup-popup-open {
   white-space: nowrap;
   border: 0;
 }
+
+/* « FORGOT PASSWORD? » anba bouton koneksyon admin lan */
+.btn-forgot-password {
+  display: block;
+  margin: 1rem auto 0;
+  padding: 0.5rem;
+  border: 0;
+  background: transparent;
+  font: inherit;
+  font-size: 0.72rem;
+  letter-spacing: 0.12em;
+  text-decoration: underline;
+  cursor: pointer;
+  color: inherit;
+  opacity: 0.75;
+}
+
+.btn-forgot-password:hover { opacity: 1; }
