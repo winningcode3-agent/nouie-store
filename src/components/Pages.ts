@@ -1088,7 +1088,18 @@ All graphics, designs, logos, product names, and content appearing on this site 
 
         if (error || !data || !data.valid) {
           appliedDiscount = null
-          feedback.innerHTML = `<span class="warning">${data?.message || 'INVALID DISCOUNT CODE'}</span>`
+          // validate_discount reponn an kreyòl (tèks entèn). Kliyan an wè
+          // sèlman yon mesaj anglè nou konnen — janm tèks brit sèvè a.
+          const raw = String(data?.message || '')
+          const min = raw.match(/\$\s*([\d.]+)/)?.[1]
+          const msg =
+            /MANKE/.test(raw) ? 'ENTER A PROMO CODE.' :
+            /POKO/.test(raw) ? 'THIS CODE IS NOT ACTIVE YET.' :
+            /EKSPIRE/.test(raw) ? 'THIS CODE HAS EXPIRED.' :
+            /LIMIT/.test(raw) ? 'THIS CODE HAS REACHED ITS USAGE LIMIT.' :
+            /MINIM/.test(raw) ? `THIS CODE REQUIRES A MINIMUM ORDER OF $${min ? Number(min).toFixed(2) : ''}.` :
+            'INVALID DISCOUNT CODE.'
+          feedback.innerHTML = `<span class="warning">${msg}</span>`
         } else {
           appliedDiscount = data
           feedback.innerHTML = `<span class="success">PROMO CODE APPLIED: -$${Number(data.discount_amount).toFixed(2)}</span>`
