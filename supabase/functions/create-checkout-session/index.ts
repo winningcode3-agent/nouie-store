@@ -18,14 +18,25 @@ const stripe = new Stripe(stripeSecretKey, {
   httpClient: Stripe.createFetchHttpClient(),
 })
 
-const corsHeaders = {
-  "Access-Control-Allow-Origin": siteUrl,
-  "Vary": "Origin",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
-  "Access-Control-Allow-Methods": "POST, OPTIONS",
+// Orijin ki gen dwa peye. `www.no-uie.com` te louvri sit la men CORS te
+// reponn sèlman `no-uie.com` → sou iPhone (Safari kache « www. ») PLACE ORDER
+// te echwe ak « Failed to send a request to the Edge Function » (22 sept).
+// Vercel redirije www → rasin kounye a; lis sa a se yon dezyèm baryè.
+const allowedOrigin = (req: Request) => {
+  const o = req.headers.get("Origin") || ""
+  const www = siteUrl.replace("://", "://www.")
+  if (o === siteUrl || o === www || /^http:\/\/(localhost|127\.0\.0\.1):\d+$/.test(o)) return o
+  return siteUrl
 }
 
 serve(async (req: Request) => {
+  const corsHeaders = {
+    "Access-Control-Allow-Origin": allowedOrigin(req),
+    "Vary": "Origin",
+    "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-region",
+    "Access-Control-Allow-Methods": "POST, OPTIONS",
+  }
+
   if (req.method === "OPTIONS") {
     return new Response("ok", { headers: corsHeaders })
   }

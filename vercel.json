@@ -25,5 +25,18 @@
         }
       ]
     }
+  ],
+  "redirects": [
+    {
+      "source": "/:path*",
+      "has": [
+        {
+          "type": "host",
+          "value": "www.no-uie.com"
+        }
+      ],
+      "destination": "https://no-uie.com/:path*",
+      "permanent": true
+    }
   ]
 }

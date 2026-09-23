@@ -23,6 +23,7 @@ const siteUrl = (Deno.env.get("SITE_URL") || "https://no-uie.com").replace(/\/+$
 // navigatè a pase repons lan bay paj ki mande l.
 const origin = (req: Request) => {
   const o = req.headers.get("Origin") || ""
+  if (o === siteUrl.replace("://", "://www.")) return o
   return /^http:\/\/(localhost|127\.0\.0\.1):\d+$/.test(o) ? o : siteUrl
 }
 
