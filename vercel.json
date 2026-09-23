@@ -28,14 +28,14 @@
   ],
   "redirects": [
     {
-      "source": "/:path*",
+      "source": "/(.*)",
       "has": [
         {
           "type": "host",
           "value": "www.no-uie.com"
         }
       ],
-      "destination": "https://no-uie.com/:path*",
+      "destination": "https://no-uie.com/$1",
       "permanent": true
     }
   ]
