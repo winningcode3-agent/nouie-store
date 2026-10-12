@@ -389,7 +389,10 @@ All graphics, designs, logos, product names, and content appearing on this site 
       if (error) console.warn('Supabase products fetch failed, using fallback catalog:', error)
       return catalogs
     }
-    return data as Product[]
+    // Baz la pa garanti okenn lòd (yon UPDATE ka voye yon pwodwi nan fen).
+    // Sa ki gen estòk anle, answit pa id — pou lòd la pa chanje pou kont li.
+    return (data as Product[]).sort((a, b) =>
+      Number((b.stock_qty || 0) > 0) - Number((a.stock_qty || 0) > 0) || a.id.localeCompare(b.id))
   }
 
   private async renderHome(contentDiv: HTMLElement): Promise<void> {
